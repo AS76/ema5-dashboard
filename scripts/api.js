@@ -12,7 +12,8 @@ const API = {
   // Then update GAS_URL below to your deployed webapp URL.
   //
   // Example GAS URL (replace with your deployed URL):
-  GAS_URL: null, // disabled — using gviz fallback
+  // Local VPS proxy (CORS-friendly) — EMA5 proxy server on Hostinger
+  PROXY_URL: 'https://riverside-forestry-linear-concepts.trycloudflare.com',
 
   // Fallback: direct Google Sheets API (requires API key with CORS support)
   // For now we use the gviz tqx approach which works without API key
@@ -64,9 +65,9 @@ const API = {
     try {
       let raw;
 
-      if (this.GAS_URL) {
-        // Use Google Apps Script CORS proxy
-        raw = await this.fetchViaGas(sheetName);
+      if (this.PROXY_URL) {
+        // Use local VPS proxy (CORS-friendly)
+        raw = await this.fetchViaProxy(sheetName);
       } else {
         // Use gviz JSON endpoint (no API key required for public sheets)
         raw = await this.fetchViaGviz(sheetName);
@@ -82,7 +83,17 @@ const API = {
     }
   },
 
-  // Method 1: Via Google Apps Script (recommended for production)
+  // Method 1: Via local VPS proxy (Cloudflare Tunnel — CORS-friendly)
+  async fetchViaProxy(sheetName) {
+    const url = `${this.PROXY_URL}/sheets?sheet=${encodeURIComponent(sheetName)}`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error || 'Proxy error');
+    return result.data;
+  },
+
+  // Method 2: Via Google Apps Script (recommended for production)
   async fetchViaGas(sheetName) {
     const url = `${this.GAS_URL}?sheet=${encodeURIComponent(sheetName)}`;
     const response = await fetch(url);
