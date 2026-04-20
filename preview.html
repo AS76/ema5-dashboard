@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EMA5 Operations Dashboard — Preview</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --tgw-yellow: #F4DB0C;
+  --tgw-red: #E5332A;
+  --navy: #1A1A2E;
+  --off-white: #F8F9FA;
+  --white: #FFFFFF;
+  --border: #E5E7EB;
+  --text-primary: #1F2937;
+  --text-secondary: #6B7280;
+  --green: #10B981;
+  --blue: #3B82F6;
+  --red: #EF4444;
+  --amber: #F59E0B;
+}
+body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif; background: var(--off-white); color: var(--text-primary); font-size: 14px; line-height: 1.5; }
+
+/* Sidebar */
+.sidebar {
+  position: fixed; left: 0; top: 0; bottom: 0; width: 240px;
+  background: var(--navy); padding: 0; display: flex; flex-direction: column; z-index: 100;
+}
+.sidebar-logo {
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.sidebar-logo img { height: 40px; width: auto; display: block; }
+.sidebar-logo-text { color: rgba(255,255,255,0.5); font-size: 11px; margin-top: 8px; letter-spacing: 0.5px; }
+.sidebar-nav { flex: 1; padding: 16px 0; }
+.nav-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 20px; color: rgba(255,255,255,0.7); text-decoration: none;
+  font-size: 14px; font-weight: 500; border-left: 3px solid transparent;
+  transition: all 0.15s;
+}
+.nav-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
+.nav-item.active { color: #fff; border-left-color: var(--tgw-yellow); background: rgba(255,255,255,0.08); font-weight: 600; }
+.nav-icon { width: 18px; height: 18px; opacity: 0.8; }
+.sidebar-footer { padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.1); }
+.sync-time { color: rgba(255,255,255,0.4); font-size: 11px; }
+
+/* Main */
+.main { margin-left: 240px; min-height: 100vh; }
+.topbar {
+  background: var(--white); border-bottom: 1px solid var(--border);
+  padding: 0 24px; height: 60px; display: flex; align-items: center; justify-content: space-between;
+}
+.topbar-title { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+.topbar-actions { display: flex; align-items: center; gap: 12px; }
+.icon-btn { width: 36px; height: 36px; border: 1px solid var(--border); border-radius: 8px; background: var(--white); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+.icon-btn:hover { background: var(--off-white); }
+
+/* Page content */
+.page { padding: 24px; max-width: 1200px; }
+.page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+.page-title { font-size: 24px; font-weight: 700; color: var(--text-primary); }
+.btn-primary {
+  background: var(--tgw-yellow); color: var(--text-primary); border: none;
+  padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.15s;
+}
+.btn-primary:hover { background: #e6c70b; }
+
+/* Stat cards */
+.stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+.stat-card {
+  background: var(--white); border-radius: 8px; padding: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08); border: 1px solid var(--border);
+}
+.stat-value { font-size: 32px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+.stat-label { font-size: 12px; color: var(--text-secondary); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-dot { width: 8px; height: 8px; border-radius: 50%; }
+.dot-red { background: var(--red); }
+.dot-blue { background: var(--blue); }
+.dot-green { background: var(--green); }
+
+/* Table */
+.table-card { background: var(--white); border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border: 1px solid var(--border); overflow: hidden; }
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table thead { background: #F3F4F6; }
+.data-table th { padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.data-table td { padding: 14px 16px; border-bottom: 1px solid var(--border); font-size: 14px; vertical-align: middle; }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tbody tr:hover { background: #F9FAFB; }
+.status-dot { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+.status-dot::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.status-ok { color: var(--green); }
+.status-amber { color: var(--amber); }
+.status-blocked { color: var(--red); }
+.badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 600; }
+.badge-danger { background: #FEE2E2; color: #DC2626; }
+.badge-warning { background: #FEF3C7; color: #D97706; }
+.badge-success { background: #D1FAE5; color: #059669; }
+
+/* Mobile */
+@media (max-width: 768px) {
+  .sidebar { transform: translateX(-100%); }
+  .main { margin-left: 0; }
+  .stats-row { grid-template-columns: 1fr; }
+  .page { padding: 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <img src="tgw-logo-on-navy.png" alt="TGW" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+    <div style="display:none; color:#F4DB0C; font-size:18px; font-weight:700;">EMA5 OPS</div>
+    <div class="sidebar-logo-text">OPERATIONS DASHBOARD</div>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="#" class="nav-item active">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      Daily Log
+    </a>
+    <a href="#" class="nav-item">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
+      Issues
+    </a>
+    <a href="#" class="nav-item">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+      Actions
+    </a>
+    <a href="#" class="nav-item">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4m7-6a4 4 0 010-8 4 4 0 010 8m7 0v-2a4 4 0 00-3-3.87"/></svg>
+      Team
+    </a>
+    <a href="#" class="nav-item">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+      Rota
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="sync-time">Last sync: 20 Apr 2026 20:50</div>
+  </div>
+</aside>
+
+<!-- Main content -->
+<main class="main">
+  <header class="topbar">
+    <div class="topbar-title">EMA5 Operations</div>
+    <div class="topbar-actions">
+      <button class="icon-btn">
+        <svg width="18" height="18" fill="none" stroke="#6B7280" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <button class="icon-btn">
+        <svg width="18" height="18" fill="none" stroke="#6B7280" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="page">
+    <div class="page-header">
+      <h1 class="page-title">Daily Log</h1>
+      <button class="btn-primary">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Add Entry
+      </button>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-value">14 <span style="font-size:16px; color: var(--text-secondary); font-weight:400;">entries</span></div>
+        <div class="stat-label">This week</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value"><span class="stat-dot dot-red"></span> 2</div>
+        <div class="stat-label">Active blockers</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value"><span class="stat-dot dot-blue"></span> 3</div>
+        <div class="stat-label">Open issues</div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Day</th>
+            <th>Presenze</th>
+            <th>North</th>
+            <th>South</th>
+            <th>Blockers</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>2026-04-20</td>
+            <td>Lunedi</td>
+            <td>Andrea, Matej</td>
+            <td><span class="status-dot status-ok">OK</span></td>
+            <td><span class="status-dot status-ok">OK</span></td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td>2026-04-19</td>
+            <td>Domenica</td>
+            <td>Team Sat</td>
+            <td><span class="status-dot status-amber">Partial</span></td>
+            <td><span class="status-dot status-ok">OK</span></td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td>2026-04-18</td>
+            <td>Sabato</td>
+            <td>6 presenti</td>
+            <td><span class="status-dot status-blocked">Blocked</span></td>
+            <td><span class="status-dot status-ok">OK</span></td>
+            <td><span class="badge badge-danger">🔴 Bracket issue</span></td>
+          </tr>
+          <tr>
+            <td>2026-04-17</td>
+            <td>Venerdi</td>
+            <td>9 presenti</td>
+            <td><span class="status-dot status-ok">OK</span></td>
+            <td><span class="status-dot status-ok">OK</span></td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td>2026-04-16</td>
+            <td>Giovedi</td>
+            <td>12 presenti</td>
+            <td><span class="status-dot status-ok">OK</span></td>
+            <td><span class="status-dot status-amber">Testing</span></td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td>2026-04-15</td>
+            <td>Mercoledi</td>
+            <td>Team A + 3</td>
+            <td><span class="status-dot status-ok">OK</span></td>
+            <td><span class="status-dot status-ok">OK</span></td>
+            <td>—</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+</body>
+</html>

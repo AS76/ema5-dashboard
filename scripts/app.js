@@ -683,7 +683,7 @@ Pages.team = async function () {
               </span>
             </div>
           ` : ''}
-          ${member.Phone ? `
+          ${member.Phone && member.Phone !== '#ERROR!' ? `
             <div class="team-field">
               <span class="team-field-label">Phone</span>
               <span class="team-field-value">${member.Phone}</span>
@@ -728,75 +728,109 @@ Pages.team = async function () {
 // ROTA PAGE
 // ============================================================
 Pages.rota = async function () {
-  const data = API.getSheet('Rota') || [];
-  const today = new Date().toISOString().split('T')[0];
-
-  if (!data.length) {
-    return App.getEmptyHTML('No rota data', 'Shift schedule will appear here once added to the spreadsheet.');
+  let rotaData;
+  try {
+    rotaData = await API.fetchRota();
+  } catch (err) {
+    return App.getErrorHTML('Rota LMS non raggiungibile: ' + err.message);
   }
 
-  // Group by day
-  const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-  const daysData = {};
-  dayOrder.forEach(d => { daysData[d] = {}; });
+  if (!rotaData || rotaData.length === 0) {
+    return App.getEmptyHTML('Nessun dato Rota', 'I dati appariranno qui quando il personale timbra.');
+  }
 
-  data.forEach(entry => {
-    const day = entry.Day;
-    if (!daysData[day]) daysData[day] = {};
-    const area = (entry.Area || 'other').toLowerCase();
-    daysData[day][area] = {
-      morning: entry.Morning || entry['Morning (06-14)'] || '',
-      afternoon: entry.Afternoon || entry['Afternoon (14-22)'] || '',
-      night: entry.Night || entry['Night (22-06)'] || '',
-    };
-  });
+  // Show last 7 days
+  const last7 = rotaData.slice(-7);
+  const today = new Date().toISOString().split('T')[0];
+
+  const qualColors = {
+    'Fitter': '#3b82f6',
+    'Electric Fitter': '#8b5cf6',
+    'Commissioning Engineer': '#10b981',
+    'EHS Advisor': '#f59e0b',
+    'Supervisor': '#ef4444',
+    'Project Manager': '#06b6d4',
+    'Engineer': '#84cc16',
+    'Onsite Manager': '#f97316',
+  };
+
+  function fmtDate(d) {
+    const date = new Date(d + 'T12:00:00');
+    const dayNum = date.getDate();
+    const months = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+    return `${dayNum} ${months[date.getMonth()]}`;
+  }
+
+  function fmtQual(qual, count) {
+    const color = qualColors[qual] || '#6b7280';
+    return `<span class="qual-badge" style="background:${color}22;color:${color};border-color:${color}44">${qual} <strong>${count}</strong></span>`;
+  }
 
   let rows = '';
-  dayOrder.forEach(day => {
-    const dayEntries = daysData[day];
-    const hasAnyData = Object.values(dayEntries).some(e => e.morning || e.afternoon || e.night);
-    if (!hasAnyData) return;
+  last7.forEach(day => {
+    const isToday = day.date === today;
+    const m = day.shifts.Morning;
+    const a = day.shifts.Afternoon;
+    const n = day.shifts.Night;
 
-    const isToday = dayEntries['north']?.morning || dayEntries['south']?.morning; // simplified check
+    const morningBadges = Object.entries(m.breakdown)
+      .sort((a,b) => b[1]-a[1])
+      .map(([qual,cnt]) => fmtQual(qual, cnt)).join('');
+
+    const afternoonBadges = Object.entries(a.breakdown)
+      .sort((a,b) => b[1]-a[1])
+      .map(([qual,cnt]) => fmtQual(qual, cnt)).join('');
+
+    const nightBadges = Object.entries(n.breakdown)
+      .sort((a,b) => b[1]-a[1])
+      .map(([qual,cnt]) => fmtQual(qual, cnt)).join('');
 
     rows += `
       <div class="rota-row ${isToday ? 'today' : ''}">
         <div class="rota-day-cell">
-          <span>${day}</span>
+          <span class="rota-day-name">${day.dayName}</span>
+          <span class="rota-day-date">${fmtDate(day.date)}</span>
+          <span class="rota-total ${isToday ? 'today-badge' : ''}">${day.grandTotal} total</span>
         </div>
         <div class="rota-shift-cell">
-          <div class="rota-shift-label">Morning</div>
-          ${dayEntries['north']?.morning ? `<div class="rota-person">${dayEntries['north'].morning}</div><span class="rota-area north">N</span>` : ''}
-          ${dayEntries['south']?.morning ? `<div class="rota-person">${dayEntries['south'].morning}</div><span class="rota-area south">S</span>` : ''}
+          <div class="rota-shift-label">Mattina</div>
+          ${m.total > 0 ? `<div class="qual-list">${morningBadges || '<span class=no-data>—</span>'}</div><div class="shift-total">${m.total} ppl</div>` : '<span class=no-data>—</span>'}
         </div>
         <div class="rota-shift-cell">
-          <div class="rota-shift-label">Afternoon</div>
-          ${dayEntries['north']?.afternoon ? `<div class="rota-person">${dayEntries['north'].afternoon}</div><span class="rota-area north">N</span>` : ''}
-          ${dayEntries['south']?.afternoon ? `<div class="rota-person">${dayEntries['south'].afternoon}</div><span class="rota-area south">S</span>` : ''}
+          <div class="rota-shift-label">Pomeriggio</div>
+          ${a.total > 0 ? `<div class="qual-list">${afternoonBadges || '<span class=no-data>—</span>'}</div><div class="shift-total">${a.total} ppl</div>` : '<span class=no-data>—</span>'}
         </div>
         <div class="rota-shift-cell">
-          <div class="rota-shift-label">Night</div>
-          ${dayEntries['north']?.night ? `<div class="rota-person">${dayEntries['north'].night}</div><span class="rota-area north">N</span>` : ''}
-          ${dayEntries['south']?.night ? `<div class="rota-person">${dayEntries['south'].night}</div><span class="rota-area south">S</span>` : ''}
+          <div class="rota-shift-label">Notte</div>
+          ${n.total > 0 ? `<div class="qual-list">${nightBadges || '<span class=no-data>—</span>'}</div><div class="shift-total">${n.total} ppl</div>` : '<span class=no-data>—</span>'}
         </div>
       </div>
     `;
   });
 
+  const syncTime = API.getRotaLastSync();
+  const syncStr = syncTime ? new Date(syncTime).toLocaleTimeString('it-IT', {hour:'2-digit',minute:'2-digit'}) : 'mai';
+
   return `
     <div class="page-header">
       <div class="page-header-top">
         <h1 class="page-title">Rota</h1>
+        <span class="page-subtitle">Team count by shift — LMS timbrature reali</span>
       </div>
-      <p class="page-subtitle">Week of ${data[0]?.Week || 'Current'}</p>
+      <p class="page-subtitle">Ultimo aggiornamento: ${syncStr}</p>
+    </div>
+
+    <div class="rota-legend">
+      <span class="legend-title">Qualifiche:</span>
+      ${Object.entries(qualColors).map(([q,c]) => `<span class="qual-badge" style="background:${c}22;color:${c};border-color:${c}44">${q}</span>`).join('')}
     </div>
 
     <div class="rota-grid">
       <div class="rota-header">
-        <div class="rota-header-cell">Day</div>
-        <div class="rota-header-cell">Morning 06–14</div>
-        <div class="rota-header-cell">Afternoon 14–22</div>
-        <div class="rota-header-cell">Night 22–06</div>
+        <div class="rota-header-cell">Giorno</div>
+        <div class="rota-header-cell">Mattina 06–14</div>
+        <div class="rota-header-cell">Pomeriggio 14–22</div>
+        <div class="rota-header-cell">Notte 22–06</div>
       </div>
       ${rows}
     </div>

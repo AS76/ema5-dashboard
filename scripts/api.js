@@ -15,6 +15,9 @@ const API = {
   // Local VPS proxy (CORS-friendly) — EMA5 proxy server on Hostinger
   PROXY_URL: 'https://securities-proposal-affiliate-creative.trycloudflare.com',
 
+  // Rota from LMS Excel (aggregated counts by qualification)
+  ROTA_URL: 'https://securities-proposal-affiliate-creative.trycloudflare.com/rota',
+
   // Fallback: direct Google Sheets API (requires API key with CORS support)
   // For now we use the gviz tqx approach which works without API key
   SHEETS_VIZ_URL: 'https://docs.google.com/spreadsheets/d/1bQdx9pqtCRec8r8HhS4cyryi6t0S5UNJrv71qA_VlqQ/gviz/tq?tqx=out:json',
@@ -161,6 +164,29 @@ const API = {
   isStale(thresholdMs = 3600000) {
     if (!this.state.lastSync) return true;
     return Date.now() - new Date(this.state.lastSync).getTime() > thresholdMs;
+  },
+
+  // Fetch rota data (aggregated from LMS Excel via VPS proxy)
+  rotaCache: null,
+  rotaCacheTime: null,
+
+  async fetchRota() {
+    if (!this.ROTA_URL) throw new Error('ROTA_URL not configured');
+    const response = await fetch(this.ROTA_URL);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error || 'Rota fetch error');
+    this.rotaCache = result.data;
+    this.rotaCacheTime = new Date().toISOString();
+    return result.data;
+  },
+
+  getRota() {
+    return this.rotaCache || [];
+  },
+
+  getRotaLastSync() {
+    return this.rotaCacheTime;
   }
 };
 
