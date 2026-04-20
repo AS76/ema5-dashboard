@@ -13,7 +13,7 @@ const API = {
   //
   // Example GAS URL (replace with your deployed URL):
   // Local VPS proxy (CORS-friendly) — EMA5 proxy server on Hostinger
-  PROXY_URL: 'https://riverside-forestry-linear-concepts.trycloudflare.com',
+  PROXY_URL: 'https://securities-proposal-affiliate-creative.trycloudflare.com',
 
   // Fallback: direct Google Sheets API (requires API key with CORS support)
   // For now we use the gviz tqx approach which works without API key
