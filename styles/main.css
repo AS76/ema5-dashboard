@@ -915,6 +915,100 @@ img {
   color: var(--color-text-primary);
 }
 
+/* Rota qualification badges */
+.rota-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-4);
+  font-size: var(--font-size-sm);
+}
+.rota-legend .legend-title {
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin-right: var(--space-1);
+}
+
+.qual-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.qual-badge strong {
+  font-weight: 700;
+}
+
+.qual-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.shift-total {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
+.rota-day-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.rota-day-name {
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+}
+.rota-day-date {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+.rota-total {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  padding: 1px 6px;
+  border-radius: 999px;
+  margin-top: 2px;
+}
+.rota-total.today-badge {
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+.rota-shift-cell {
+  padding: var(--space-3) var(--space-3);
+}
+.rota-shift-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+}
+
+.no-data {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-style: italic;
+}
+
+.rota-row.today .rota-day-cell {
+  color: var(--color-primary);
+}
+
 /* -----------------------------------------------------------
    12. SKELETON LOADING
    ----------------------------------------------------------- */
