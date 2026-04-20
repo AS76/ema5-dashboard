@@ -12,7 +12,7 @@ const API = {
   // Then update GAS_URL below to your deployed webapp URL.
   //
   // Example GAS URL (replace with your deployed URL):
-  GAS_URL: 'https://script.google.com/macros/s/AKfycby8q9tKx_4xLzgIKICytVpeZZ9gPbT89xPmbXgu6BiZHYiVOZvKzFtr68QxAbbtwOV_/exec',
+  GAS_URL: null, // disabled — using gviz fallback
 
   // Fallback: direct Google Sheets API (requires API key with CORS support)
   // For now we use the gviz tqx approach which works without API key
