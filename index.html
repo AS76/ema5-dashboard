@@ -128,7 +128,7 @@ const DATA = { dailyLog: [], workDays: [], siteProgress: [], team: [], loaded: f
 let charts = {};
 
 // GitHub raw URLs — no CORS issues
-const GH_BASE = 'https://raw.githubusercontent.com/AS76/ema5-data/main';
+const GH_BASE = 'https://raw.githubusercontent.com/AS76/ema5-data/main?cb=' + Date.now();
 
 async function fetchJSON(path) {
   const r = await fetch(path);
