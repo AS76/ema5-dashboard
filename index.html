@@ -237,9 +237,10 @@ function esc(s) {
 
 async function loadAll() {
   try {
-    const [dl, iss] = await Promise.all([fetchSheet('Daily Log'), fetchSheet('Issues')]);
+    const [dl, iss, team] = await Promise.all([fetchSheet('Daily Log'), fetchSheet('Issues'), fetchSheet('Team')]);
     DATA.dailyLog = parseRows(dl);
     DATA.issues = parseRows(iss);
+    DATA.team = parseRows(team);
     DATA.loaded = true;
     document.getElementById('syncTime').textContent = 'Synced ' + new Date().toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'});
     renderAll();
