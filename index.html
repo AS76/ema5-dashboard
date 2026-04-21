@@ -230,12 +230,25 @@ function computeShiftsByDate(rows) {
     const d = parseDateDMY(r.Date || r.date);
     if (!d) return;
     const k = d.toISOString().slice(0, 10);
-    if (!map[k]) map[k] = { total: 0, morning: 0, afternoon: 0, night: 0 };
-    map[k].total++;
+    if (!map[k]) map[k] = { total: 0, morning: 0, afternoon: 0, night: 0, open: 0 };
+    
+    const status = r.Status || r.status || 'Open';
     const t = (r['Start Time'] || r.start_time || '00:00').toString();
-    if (t < '12:00') map[k].morning++;
-    else if (t < '17:00') map[k].afternoon++;
-    else map[k].night++;
+    const startHour = parseInt(t.split(':')[0]) || 0;
+    
+    // Rule: Open workers with check-in before 14:00 are "present" (forgot checkout)
+    const isActive = (status === 'Present') || (status === 'Open' && startHour < 14);
+    
+    if (isActive) {
+      map[k].total++;
+      if (startHour < 12) map[k].morning++;
+      else if (startHour < 17) map[k].afternoon++;
+      else map[k].night++;
+    }
+    // Track "forgot checkout" cases separately
+    if (status === 'Open' && startHour < 14) {
+      map[k].open = (map[k].open || 0) + 1;
+    }
   });
   return map;
 }
@@ -260,21 +273,27 @@ function esc(s) {
 function renderStats() {
   const shifts = computeShiftsByDate(DATA.workDays);
   const dates = Object.keys(shifts).sort();
-  const last14 = dates.slice(-14);
   const today = new Date().toISOString().slice(0, 10);
   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-  const todayHC = shifts[today] || shifts[yesterday] || { total: 0, morning: 0, afternoon: 0, night: 0 };
-  const totalDays = dates.length;
+  const todayHC = shifts[today] || shifts[yesterday] || { total: 0, morning: 0, afternoon: 0, night: 0, open: 0 };
+  const totalDays = dates.length; // unique dates with attendance
   const totalEntries = DATA.dailyLog.length;
-  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 30);
+  
+  // Total downtime: ALL delays from project start (not just 30 days)
   let totalDelayH = 0;
   DATA.dailyLog.forEach(r => {
-    const d = parseDateDMY(r.Date || r.date);
-    if (d && d >= cutoff) totalDelayH += delayHours(r.Delays || r.delays);
+    totalDelayH += delayHours(r.Delays || r.delays);
   });
   document.getElementById('statsRow').innerHTML = `
-    <div class="stat-card"><div class="stat-label">Headcount Today</div><div class="stat-value accent">${todayHC.total}</div><div class="stat-label" style="margin-top:4px">M ${todayHC.morning} · A ${todayHC.afternoon} · N ${todayHC.night}</div></div>
-    <div class="stat-card"><div class="stat-label">Total Shifts Recorded</div><div class="stat-value">${DATA.workDays.length}</div></div>
+    <div class="stat-card">
+      <div class="stat-label">Headcount Today</div>
+      <div class="stat-value accent">${todayHC.total}</div>
+      <div class="stat-label" style="margin-top:4px">M ${todayHC.morning} · A ${todayHC.afternoon} · N ${todayHC.night}${todayHC.open ? ' · <span style="color:#CA8A04">⚠ ' + todayHC.open + ' open</span>' : ''}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Days on Site (since 11-Dec-25)</div>
+      <div class="stat-value">${totalDays}</div>
+    </div>
     <div class="stat-card"><div class="stat-label">Daily Log Entries</div><div class="stat-value">${totalEntries}</div></div>
     <div class="stat-card"><div class="stat-label">Downtime (30d)</div><div class="stat-value red">${totalDelayH}h</div></div>
   `;
