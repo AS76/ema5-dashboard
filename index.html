@@ -505,8 +505,8 @@ function renderCharts() {
     },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } },
-        scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } },
+      scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }
     }
   });
 
@@ -527,7 +527,7 @@ function renderCharts() {
         responsive: true, maintainAspectRatio: false,
         plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } },
           tooltip: { mode: 'index', intersect: false } },
-        scales: { x: { ticks: { maxRotation: 45, minRotation: 45, font: { size: 9 } }, y: { beginAtZero: true, title: { display: true, text: 'Headcount' } } }
+        scales: { x: { ticks: { maxRotation: 45, minRotation: 45, font: { size: 9 } }, y: { beginAtZero: true, title: { display: true, text: 'Headcount' } } } }
       }
     });
   }
