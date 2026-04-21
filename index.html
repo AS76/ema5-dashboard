@@ -6,7 +6,7 @@
   <title>EMA5 Operations</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://unpkg.com/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     :root { --bg: #FAF7F2; --bg2: #FFFFFF; --bg3: #F0EDE8; --border: #E5DFD6; --text: #2D2418; --muted: #8C7B6E; --accent: #2563EB; --green: #16A34A; --yellow: #CA8A04; --red: #DC2626; --purple: #7C3AED; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -131,18 +131,11 @@ let charts = {};
 const GH_BASE = 'https://raw.githubusercontent.com/AS76/ema5-data/main';
 
 async function fetchJSON(path) {
+  // Strip cache-busting query params for GitHub raw URLs (doesn't support them)
+  const cleanPath = path.replace(/\?cb=\d+/, '');
   try {
-    const r = await fetch(path);
-    if (!r.ok) {
-      // Try without cache-busting if it fails
-      const altPath = path.replace(/\?cb=\d+/, '');
-      if (altPath !== path) {
-        const r2 = await fetch(altPath);
-        if (!r2.ok) throw new Error(r2.status + ' ' + r2.statusText + ' [URL: ' + altPath.slice(0,80) + ']');
-        return r2.json();
-      }
-      throw new Error(r.status + ' ' + r.statusText + ' [URL: ' + path.slice(0,80) + ']');
-    }
+    const r = await fetch(cleanPath);
+    if (!r.ok) throw new Error(r.status + ' ' + r.statusText + ' [url: ' + cleanPath.slice(0,80) + ']');
     return r.json();
   } catch(e) {
     console.error('fetchJSON error:', e);
