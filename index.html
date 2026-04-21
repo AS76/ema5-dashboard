@@ -4,123 +4,478 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EMA5 Operations</title>
-  <meta name="description" content="EMA5 Amazon Automated Warehouse Operations Dashboard">
-
-  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0f172a; --surface: #1e293b; --surface2: #334155;
+      --border: #475569; --text: #f1f5f9; --text2: #94a3b8;
+      --accent: #3b82f6; --green: #22c55e; --yellow: #eab308;
+      --red: #ef4444; --purple: #a855f7;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="assets/tgw-logo-icon.png">
+    /* ── Layout ── */
+    .layout { display: flex; min-height: 100vh; }
+    .sidebar { width: 220px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; z-index: 100; }
+    .sidebar-header { padding: 20px 16px 16px; border-bottom: 1px solid var(--border); }
+    .sidebar-logo { font-size: 18px; font-weight: 700; color: var(--text); }
+    .sidebar-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
+    .sidebar nav { flex: 1; padding: 12px 8px; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; color: var(--text2); font-size: 14px; font-weight: 500; transition: all 0.15s; margin-bottom: 2px; }
+    .nav-item:hover { background: var(--surface2); color: var(--text); }
+    .nav-item.active { background: var(--accent); color: #fff; }
+    .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .sidebar-footer { padding: 12px 16px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text2); }
 
-  <!-- Styles -->
-  <link rel="stylesheet" href="styles/main.css">
+    /* ── Main ── */
+    .main { flex: 1; margin-left: 220px; padding: 24px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+    .topbar h1 { font-size: 22px; font-weight: 700; }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .sync-info { font-size: 12px; color: var(--text2); }
+    .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: 500; transition: opacity 0.15s; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn:hover { opacity: 0.85; }
+
+    /* ── Cards ── */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+    .card-title { font-size: 13px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; }
+
+    /* ── Stats row ── */
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; }
+    .stat-value { font-size: 28px; font-weight: 700; }
+    .stat-label { font-size: 12px; color: var(--text2); margin-top: 4px; }
+    .stat-accent { color: var(--accent); }
+    .stat-green { color: var(--green); }
+    .stat-yellow { color: var(--yellow); }
+    .stat-red { color: var(--red); }
+
+    /* ── Table ── */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 10px 12px; color: var(--text2); font-weight: 600; border-bottom: 1px solid var(--border); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+    td { padding: 10px 12px; border-bottom: 1px solid var(--surface2); white-space: nowrap; }
+    tr:hover td { background: var(--surface2); }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+    .badge-blue { background: rgba(59,130,246,0.2); color: var(--accent); }
+    .badge-green { background: rgba(34,197,94,0.2); color: var(--green); }
+    .badge-yellow { background: rgba(234,179,8,0.2); color: var(--yellow); }
+    .badge-red { background: rgba(239,68,68,0.2); color: var(--red); }
+    .mono { font-family: monospace; font-size: 12px; }
+
+    /* ── Charts ── */
+    .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+    .chart-wrap { position: relative; height: 260px; }
+    .chart-wide { grid-column: 1 / -1; }
+
+    /* ── Page sections ── */
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* ── Mobile ── */
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .main { margin-left: 0; padding: 16px; }
+      .stats { grid-template-columns: 1fr 1fr; }
+      .charts { grid-template-columns: 1fr; }
+    }
+
+    /* ── Loading ── */
+    .loading { text-align: center; padding: 40px; color: var(--text2); }
+    .loading-spinner { width: 32px; height: 32px; border: 3px solid var(--surface2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
 </head>
 <body>
-  <div id="app" class="app">
-    <!-- Sidebar Backdrop (mobile) -->
-    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-logo">
-        <img src="assets/tgw-logo-on-navy.png" alt="TGW Logo" onerror="this.style.display='none'">
-        <div class="sidebar-logo-text">
-          <span class="sidebar-logo-title">EMA5</span>
-          <span class="sidebar-logo-sub">Operations</span>
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">EMA5</div>
+      <div class="sidebar-sub">Operations Dashboard</div>
+    </div>
+    <nav>
+      <div class="nav-item active" onclick="showPage('overview')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <span>Overview</span>
+      </div>
+      <div class="nav-item" onclick="showPage('daily-log')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span>Daily Log</span>
+      </div>
+      <div class="nav-item" onclick="showPage('analytics')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <span>Analytics</span>
+      </div>
+      <div class="nav-item" onclick="showPage('team')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>Team</span>
+      </div>
+    </nav>
+    <div class="sidebar-footer" id="syncTime">Loading...</div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <div class="topbar">
+      <h1 id="pageTitle">Overview</h1>
+      <div class="topbar-right">
+        <span class="sync-info" id="lastSync"></span>
+        <button class="btn btn-primary" onclick="loadAll()">↻ Refresh</button>
+      </div>
+    </div>
+
+    <!-- ── Overview ── -->
+    <div class="page active" id="page-overview">
+      <div class="stats" id="statsRow"></div>
+      <div class="charts">
+        <div class="chart-wide card">
+          <div class="card-title">Headcount — Last 14 Days</div>
+          <div class="chart-wrap"><canvas id="chartHeadcount"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Weekly Total Headcount</div>
+          <div class="chart-wrap"><canvas id="chartWeekly"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Qualifications Distribution</div>
+          <div class="chart-wrap"><canvas id="chartQualifications"></canvas></div>
         </div>
       </div>
-
-      <nav class="sidebar-nav" id="sidebarNav">
-        <div class="nav-item" data-page="daily-log">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-            <line x1="16" y1="2" x2="16" y2="6"/>
-            <line x1="8" y1="2" x2="8" y2="6"/>
-            <line x1="3" y1="10" x2="21" y2="10"/>
-          </svg>
-          <span>Daily Log</span>
+      <div class="card">
+        <div class="card-title">Recent Entries</div>
+        <div class="table-wrap">
+          <table id="tableRecent">
+            <thead><tr><th>Date</th><th>Day</th><th>Total</th><th>Morning</th><th>Afternoon</th><th>Night</th><th>Companies</th><th>Qualifications</th></tr></thead>
+            <tbody></tbody>
+          </table>
         </div>
-        <div class="nav-item" data-page="issues">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="12" y1="8" x2="12" y2="12"/>
-            <line x1="12" y1="16" x2="12.01" y2="16"/>
-          </svg>
-          <span>Issues</span>
-        </div>
-        <div class="nav-item" data-page="actions">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="9 11 12 14 22 4"/>
-            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-          </svg>
-          <span>Actions</span>
-        </div>
-        <div class="nav-item" data-page="team">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-            <circle cx="9" cy="7" r="4"/>
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-          </svg>
-          <span>Team</span>
-        </div>
-        <div class="nav-item" data-page="rota">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-            <line x1="16" y1="2" x2="16" y2="6"/>
-            <line x1="8" y1="2" x2="8" y2="6"/>
-            <line x1="3" y1="10" x2="21" y2="10"/>
-            <line x1="9" y1="16" x2="15" y2="16"/>
-          </svg>
-          <span>Rota</span>
-        </div>
-        <div class="nav-item" data-page="analytics">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="20" x2="18" y2="10"/>
-            <line x1="12" y1="20" x2="12" y2="4"/>
-            <line x1="6" y1="20" x2="6" y2="14"/>
-          </svg>
-          <span>Analytics</span>
-        </div>
-      </nav>
-
-      <div class="sidebar-footer">
-        <div class="sidebar-sync" id="syncTime">Loading...</div>
       </div>
-    </aside>
+    </div>
 
-    <!-- Main Content -->
-    <main class="main-content">
-      <!-- Top Bar -->
-      <header class="topbar">
-        <button class="topbar-hamburger" id="hamburgerBtn" aria-label="Open menu">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="3" y1="6" x2="21" y2="6"/>
-            <line x1="3" y1="12" x2="21" y2="12"/>
-            <line x1="3" y1="18" x2="21" y2="18"/>
-          </svg>
-        </button>
-        <div class="topbar-title" id="topbarTitle">Daily Log</div>
-        <div class="topbar-actions" id="topbarActions"></div>
-      </header>
-
-      <!-- Page Content -->
-      <div class="page-content" id="pageContent">
-        <!-- Dynamic page content loaded here -->
+    <!-- ── Daily Log ── -->
+    <div class="page" id="page-daily-log">
+      <div class="card">
+        <div class="card-title">Daily Log — All Entries</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Date</th><th>Day</th><th>Total</th><th>Morning</th><th>Afternoon</th><th>Night</th><th>Companies</th><th>Qualifications</th><th>Names</th></tr></thead>
+            <tbody id="tableDailyLog"></tbody>
+          </table>
+        </div>
       </div>
-    </main>
+    </div>
 
-    <!-- Toast Container -->
-    <div class="toast-container" id="toastContainer"></div>
-  </div>
+    <!-- ── Analytics ── -->
+    <div class="page" id="page-analytics">
+      <div class="charts">
+        <div class="chart-wide card">
+          <div class="card-title">Daily Headcount — Last 30 Days</div>
+          <div class="chart-wrap"><canvas id="chartDaily30"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Qualifications Distribution</div>
+          <div class="chart-wrap"><canvas id="chartQualsDonut"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Weekly Total Headcount</div>
+          <div class="chart-wrap"><canvas id="chartWeekly2"></canvas></div>
+        </div>
+      </div>
+    </div>
 
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- ── Team ── -->
+    <div class="page" id="page-team">
+      <div class="card">
+        <div class="card-title">Team — All Members</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Name</th><th>Employee No</th><th>Qualification</th><th>Company</th><th>Supervisor</th><th>Last Seen</th></tr></thead>
+            <tbody id="tableTeam"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
 
-  <!-- Scripts -->
-  <script src="scripts/api.js"></script>
-  <script src="scripts/app.js"></script>
+<script>
+// ── Config ──────────────────────────────────────────────
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxGtL_0WUsZXjhorA6WhCI2zzv6JqP9kDmtK4q7CExt5Z4v7nyqJDcMtTyg8Nq9UYr76g/exec';
+
+const DATA = { dailyLog: [], team: [], loaded: false };
+let charts = {};
+
+// ── Fetch from GAS ───────────────────────────────────────
+async function fetchSheet(sheet) {
+  const res = await fetch(`${GAS_URL}?sheet=${encodeURIComponent(sheet)}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const json = await res.json();
+  return json.data; // [[headers], [row1], ...]
+}
+
+function parseRows(raw) {
+  if (!raw || raw.length < 2) return [];
+  const headers = raw[0].map(h => String(h || '').trim());
+  return raw.slice(1).map(row => {
+    const obj = {};
+    headers.forEach((h, i) => { obj[h] = row[i] ?? ''; });
+    return obj;
+  });
+}
+
+// ── Load all data ────────────────────────────────────────
+async function loadAll() {
+  try {
+    const [dlRaw, teamRaw] = await Promise.all([
+      fetchSheet('Daily Log'),
+      fetchSheet('Team')
+    ]);
+    DATA.dailyLog = parseRows(dlRaw);
+    DATA.team = parseRows(teamRaw);
+    DATA.loaded = true;
+
+    const now = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    document.getElementById('lastSync').textContent = `Synced ${now}`;
+    document.getElementById('syncTime').textContent = `Synced ${now}`;
+
+    renderAll();
+  } catch (e) {
+    alert('Error loading data: ' + e.message);
+  }
+}
+
+// ── Render everything ────────────────────────────────────
+function renderAll() {
+  const rows = [...DATA.dailyLog].sort((a, b) => new Date(b.Date) - new Date(a.Date));
+  const last7 = rows.slice(0, 7);
+  const last30 = rows.slice(0, 30);
+
+  renderStats(last7);
+  renderRecent(rows.slice(0, 20));
+  renderDailyLog(rows);
+  renderTeam();
+  renderCharts(last7, rows);
+}
+
+// ── Stats ───────────────────────────────────────────────
+function renderStats(last7) {
+  const total7 = last7.reduce((s, r) => s + (Number(r.Total) || 0), 0);
+  const avgDaily = last7.length ? Math.round(total7 / last7.length) : 0;
+  const totalRows = DATA.dailyLog.length;
+  const latest = DATA.dailyLog[DATA.dailyLog.length - 1] || {};
+  const peak = Math.max(...DATA.dailyLog.map(r => Number(r.Total) || 0));
+
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat">
+      <div class="stat-value stat-accent">${avgDaily}</div>
+      <div class="stat-label">Avg headcount / day (7d)</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value stat-green">${totalRows}</div>
+      <div class="stat-label">Total log entries</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">${Number(latest.Total) || 0}</div>
+      <div class="stat-label">Latest entry headcount</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value stat-yellow">${peak}</div>
+      <div class="stat-label">Peak headcount ever</div>
+    </div>
+  `;
+}
+
+// ── Recent table ─────────────────────────────────────────
+function renderRecent(rows) {
+  const tbody = document.querySelector('#tableRecent tbody');
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td class="mono">${fmtDate(r.Date)}</td>
+      <td>${r.Day || ''}</td>
+      <td><strong>${r.Total || 0}</strong></td>
+      <td>${r.Morning || 0}</td>
+      <td>${r.Afternoon || 0}</td>
+      <td>${r.Night || 0}</td>
+      <td>${escHtml(r.Companies || '')}</td>
+      <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis">${escHtml(r.Qualifications || '')}</td>
+    </tr>
+  `).join('');
+}
+
+// ── Daily log table ──────────────────────────────────────
+function renderDailyLog(rows) {
+  const tbody = document.getElementById('tableDailyLog');
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td class="mono">${fmtDate(r.Date)}</td>
+      <td>${r.Day || ''}</td>
+      <td><strong>${r.Total || 0}</strong></td>
+      <td>${r.Morning || 0}</td>
+      <td>${r.Afternoon || 0}</td>
+      <td>${r.Night || 0}</td>
+      <td>${escHtml(r.Companies || '')}</td>
+      <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis">${escHtml(r.Qualifications || '')}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;color:var(--text2)">${escHtml(r.Names || '')}</td>
+    </tr>
+  `).join('');
+}
+
+// ── Team table ──────────────────────────────────────────
+function renderTeam() {
+  const tbody = document.getElementById('tableTeam');
+  const rows = [...DATA.team].sort((a, b) => (a.Name || '').localeCompare(b.Name || ''));
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td><strong>${escHtml(r.Name || '')}</strong></td>
+      <td class="mono">${escHtml(r['Employee No'] || '')}</td>
+      <td><span class="badge badge-blue">${escHtml(r.Qualification || '')}</span></td>
+      <td>${escHtml(r.Company || '')}</td>
+      <td>${escHtml(r.Supervisor || '')}</td>
+      <td class="mono" style="color:var(--text2)">${fmtDate(r['Last Seen'] || '')}</td>
+    </tr>
+  `).join('');
+}
+
+// ── Charts ───────────────────────────────────────────────
+function renderCharts(last7, allRows) {
+  Object.values(charts).forEach(c => c.destroy());
+  charts = {};
+
+  const sorted = [...allRows].sort((a, b) => new Date(a.Date) - new Date(b.Date));
+  const last14 = sorted.slice(-14);
+
+  // Headcount 14 days
+  const labels = last14.map(r => {
+    const d = new Date(r.Date);
+    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+  });
+  const mData = last14.map(r => Number(r.Morning) || 0);
+  const aData = last14.map(r => Number(r.Afternoon) || 0);
+  const nData = last14.map(r => Number(r.Night) || 0);
+
+  charts.hc = new Chart(document.getElementById('chartHeadcount'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Morning', data: mData, backgroundColor: '#3b82f6' },
+        { label: 'Afternoon', data: aData, backgroundColor: '#f59e0b' },
+        { label: 'Night', data: nData, backgroundColor: '#a855f7' }
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } }
+  });
+
+  // Qualifications doughnut
+  const qCounts = {};
+  sorted.forEach(r => {
+    const qs = (r.Qualifications || '').split(',');
+    qs.forEach(q => {
+      const m = q.trim().match(/^(.+?):\s*(\d+)$/);
+      if (m) qCounts[m[1]] = (qCounts[m[1]] || 0) + Number(m[2]);
+    });
+  });
+  const qLabels = Object.keys(qCounts).sort((a, b) => qCounts[b] - qCounts[a]).slice(0, 8);
+  const qData = qLabels.map(k => qCounts[k]);
+  const qColors = ['#3b82f6','#22c55e','#f59e0b','#ef4444','#a855f7','#06b6d4','#84cc16','#f97316'];
+
+  charts.quals = new Chart(document.getElementById('chartQualifications'), {
+    type: 'doughnut',
+    data: { labels: qLabels, datasets: [{ data: qData, backgroundColor: qColors }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } } }
+  });
+
+  // Weekly trend
+  const weekly = {};
+  sorted.forEach(r => {
+    const d = new Date(r.Date);
+    const yw = `${d.getFullYear()}-W${String(getISOWeek(d)).padStart(2,'0')}`;
+    weekly[yw] = (weekly[yw] || 0) + (Number(r.Total) || 0);
+  });
+  const wKeys = Object.keys(weekly).sort();
+  charts.weekly = new Chart(document.getElementById('chartWeekly'), {
+    type: 'line',
+    data: {
+      labels: wKeys,
+      datasets: [{ label: 'Total Headcount', data: wKeys.map(k => weekly[k]), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.3 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+  });
+
+  // Analytics charts
+  if (document.getElementById('chartDaily30')) {
+    const last30 = sorted.slice(-30);
+    charts.d30 = new Chart(document.getElementById('chartDaily30'), {
+      type: 'bar',
+      data: {
+        labels: last30.map(r => {
+          const d = new Date(r.Date);
+          return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+        }),
+        datasets: [
+          { label: 'Morning', data: last30.map(r => Number(r.Morning)||0), backgroundColor: '#3b82f6' },
+          { label: 'Afternoon', data: last30.map(r => Number(r.Afternoon)||0), backgroundColor: '#f59e0b' },
+          { label: 'Night', data: last30.map(r => Number(r.Night)||0), backgroundColor: '#a855f7' }
+        ]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } }
+    });
+
+    charts.quals2 = new Chart(document.getElementById('chartQualsDonut'), {
+      type: 'doughnut',
+      data: { labels: qLabels, datasets: [{ data: qData, backgroundColor: qColors }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } } }
+    });
+
+    charts.weekly2 = new Chart(document.getElementById('chartWeekly2'), {
+      type: 'line',
+      data: {
+        labels: wKeys,
+        datasets: [{ label: 'Total Headcount', data: wKeys.map(k => weekly[k]), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.3 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+    });
+  }
+}
+
+// ── Navigation ───────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(`page-${name}`).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  const titles = { overview: 'Overview', 'daily-log': 'Daily Log', analytics: 'Analytics', team: 'Team' };
+  document.getElementById('pageTitle').textContent = titles[name] || name;
+}
+
+// ── Helpers ──────────────────────────────────────────────
+function fmtDate(v) {
+  if (!v) return '';
+  const d = new Date(v);
+  if (isNaN(d)) return '';
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' });
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function getISOWeek(date) {
+  const d = new Date(date);
+  d.setHours(0,0,0,0);
+  d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
+  const week1 = new Date(d.getFullYear(), 0, 4);
+  return 1 + Math.round(((d - week1) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+}
+
+// ── Init ─────────────────────────────────────────────────
+loadAll();
+</script>
 </body>
 </html>
