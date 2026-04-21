@@ -362,7 +362,9 @@ let charts = {};
 
 // ── Data Loading ──
 async function fetchJSON(path) {
+  console.log('[fetchJSON] Loading:', path);
   const r = await fetch(GH_BASE + '/' + path);
+  console.log('[fetchJSON] Status:', r.status, 'for', path);
   if (!r.ok) throw new Error(r.status + ' ' + r.statusText);
   return r.json();
 }
