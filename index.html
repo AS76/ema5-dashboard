@@ -164,14 +164,16 @@
     .view.active { display: block; }
 
     /* ── Team ── */
-    .team-dept { margin-bottom: 28px; }
-    .dept-header { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); padding-bottom: 10px; border-bottom: 1px solid var(--border); margin-bottom: 4px; display: flex; justify-content: space-between; }
-    .dept-count { font-weight: 400; letter-spacing: 0; text-transform: none; }
-    .person-row { display: flex; align-items: center; gap: 16px; padding: 9px 0; border-bottom: 1px solid rgba(226,221,213,0.4); font-size: 13px; }
+    .dept-header-labels { display: grid; grid-template-columns: 160px 140px 140px 70px 70px; gap: 16px; padding: 4px 0 8px 0; border-bottom: 2px solid var(--border); }
+    .dept-header-labels span { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .person-row { display: grid; grid-template-columns: 160px 140px 140px 70px 70px; gap: 16px; padding: 9px 0; border-bottom: 1px solid rgba(226,221,213,0.4); font-size: 13px; align-items: center; }
     .person-row:last-child { border-bottom: none; }
-    .person-name { font-weight: 500; min-width: 170px; }
-    .person-qual { color: var(--muted); min-width: 150px; font-size: 12px; }
-    .person-company { color: var(--muted); flex: 1; font-size: 12px; }
+    .person-name { font-weight: 500; }
+    .person-qual { color: var(--muted); font-size: 12px; }
+    .person-company { color: var(--muted); font-size: 12px; }
+    .person-days, .person-ot { font-size: 12px; text-align: center; }
+    .person-ot { color: var(--muted); }
+    .person-ot.over { color: var(--orange); font-weight: 600; }
 
     /* ── Progress ── */
     .progress-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; box-shadow: var(--shadow); }
@@ -777,6 +779,19 @@ function toggleDept(el) {
 function renderTeam() {
   const container = document.getElementById('teamContainer');
   if (!container) return;
+
+  // Pre-compute per-person stats: days of presence + total hours
+  const personStats = {};
+  DATA.workDays.forEach(r => {
+    const key = `${r['First Name']||''} ${r['Last Name']||''}`.trim();
+    if (!key) return;
+    if (!personStats[key]) personStats[key] = { days: new Set(), totalH: 0 };
+    if (r['Work Time']) {
+      personStats[key].days.add(r['Date']);
+      personStats[key].totalH += parseFloat(r['Work Time'].replace(',','.')) || 0;
+    }
+  });
+
   const seen = new Set();
   const rows = DATA.workDays.filter(r => {
     const key = `${r['First Name']||''}${r['Last Name']||''}`.trim();
@@ -810,6 +825,13 @@ function renderTeam() {
   });
   const ordered = [...DEPT_ORDER.filter(d => byDept[d]), ...Object.keys(byDept).filter(d => !DEPT_ORDER.includes(d))];
   let html = '';
+  html += `<div class="dept-header-labels">
+    <span>Name</span>
+    <span>Role</span>
+    <span>Company</span>
+    <span>Days</span>
+    <span>OT%</span>
+  </div>`;
   ordered.forEach(dept => {
     const people = byDept[dept].sort((a, b) => `${a['Last Name']||''}`.localeCompare(`${b['Last Name']||''}`));
     html += `<div class="dept-accordion">
@@ -820,10 +842,17 @@ function renderTeam() {
       <div class="dept-people">`;
     people.forEach(p => {
       const name = `${p['First Name']||''} ${p['Last Name']||''}`.trim();
+      const stats = personStats[name] || { days: new Set(), totalH: 0 };
+      const dayCount = stats.days.size;
+      const otRate = dayCount > 0 ? ((stats.totalH - dayCount * 10.5) / (dayCount * 10.5)) * 100 : 0;
+      const otClass = otRate > 0 ? 'over' : '';
+      const otStr = otRate >= 0 ? `+${otRate.toFixed(1)}%` : `${otRate.toFixed(1)}%`;
       html += `<div class="person-row">
         <div class="person-name">${esc(name)}</div>
         <div class="person-qual">${esc(p.Qualification || '')}</div>
         <div class="person-company">${esc(p.Company || '')}</div>
+        <div class="person-days">${dayCount}</div>
+        <div class="person-ot ${otClass}">${otStr}</div>
       </div>`;
     });
     html += `</div></div>`;
