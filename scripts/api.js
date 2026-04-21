@@ -13,7 +13,7 @@ const API = {
   //
   // Example GAS URL (replace with your deployed URL):
   // Local VPS proxy (CORS-friendly) — EMA5 proxy server on Hostinger
-  PROXY_URL: 'https://ema5.asassi.cloud',
+  // PROXY_URL: 'https://ema5.asassi.cloud',
 
   // Rota from LMS Excel (aggregated counts by qualification)
   ROTA_URL: 'https://ema5.asassi.cloud/rota',
