@@ -15,7 +15,8 @@ const App = {
     'issues': 'Issues Tracker',
     'actions': 'Actions',
     'team': 'Team Contacts',
-    'rota': 'Rota'
+    'rota': 'Rota',
+    'analytics': 'Analytics'
   },
 
   // Initialize the app
@@ -136,6 +137,9 @@ const App = {
           break;
         case 'rota':
           html = await Pages.rota();
+          break;
+        case 'analytics':
+          html = await Pages.analytics();
           break;
         default:
           html = '<div class="empty-state"><div class="empty-state-title">Page not found</div></div>';
@@ -836,6 +840,132 @@ Pages.rota = async function () {
     </div>
   `;
 };
+
+// ============================================================
+// ANALYTICS PAGE
+// ============================================================
+Pages.analytics = async function () {
+  const rows = API.state.data['Daily Log'] || [];
+  if (rows.length === 0) {
+    return `<div class="page-header"><h1>Analytics</h1></div><div class="empty-state"><div class="empty-state-title">No data available</div><p>Sync from Google Sheets first.</p></div>`;
+  }
+
+  // Sort by date ascending
+  const sorted = [...rows].sort((a, b) => new Date(a.Date) - new Date(b.Date));
+
+  // ── Chart 1: Daily headcount (last 14 days) ───────────────
+  const last14 = sorted.slice(-14);
+  const labels14 = last14.map(r => {
+    const d = new Date(r.Date);
+    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+  });
+  const morningData = last14.map(r => Number(r.Morning) || 0);
+  const afternoonData = last14.map(r => Number(r.Afternoon) || 0);
+  const nightData = last14.map(r => Number(r.Night) || 0);
+
+  // ── Chart 2: Qualifications distribution ─────────────────
+  const qualCounts = {};
+  sorted.forEach(r => {
+    const quals = (r.Qualifications || '').split(',').map(q => q.trim()).filter(Boolean);
+    quals.forEach(q => {
+      const match = q.match(/^(.+?):\s*(\d+)$/);
+      if (match) {
+        const name = match[1].trim();
+        qualCounts[name] = (qualCounts[name] || 0) + Number(match[2]);
+      }
+    });
+  });
+  const qualLabels = Object.keys(qualCounts);
+  const qualData = Object.values(qualCounts);
+
+  // ── Chart 3: Weekly headcount trend ────────────────────────
+  const weeklyTotals = {};
+  sorted.forEach(r => {
+    const d = new Date(r.Date);
+    const year = d.getFullYear();
+    const week = getISOWeek(d);
+    const key = `${year}-W${String(week).padStart(2,'0')}`;
+    weeklyTotals[key] = (weeklyTotals[key] || 0) + (Number(r.Total) || 0);
+  });
+  const weekLabels = Object.keys(weeklyTotals).sort();
+  const weekData = weekLabels.map(k => weeklyTotals[k]);
+
+  return `
+    <div class="page-header">
+      <h1>Analytics</h1>
+      <div class="page-subtitle">Workforce insights from Daily Log</div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card chart-card-wide">
+        <div class="chart-title">Headcount — Last 14 Days</div>
+        <div class="chart-wrap">
+          <canvas id="chartHeadcount"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title">Qualifications — All Time</div>
+        <div class="chart-wrap chart-wrap-sm">
+          <canvas id="chartQualifications"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title">Weekly Total Headcount</div>
+        <div class="chart-wrap">
+          <canvas id="chartWeekly"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Render charts after DOM is ready
+      requestAnimationFrame(() => {
+        const chartOpts = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'bottom' } } };
+
+        new Chart(document.getElementById('chartHeadcount'), {
+          type: 'bar',
+          data: {
+            labels: ${JSON.stringify(labels14)},
+            datasets: [
+              { label: 'Morning', data: ${JSON.stringify(morningData)}, backgroundColor: '#1e88e5' },
+              { label: 'Afternoon', data: ${JSON.stringify(afternoonData)}, backgroundColor: '#fb8c00' },
+              { label: 'Night', data: ${JSON.stringify(nightData)}, backgroundColor: '#6a1b9a' }
+            ]
+          },
+          options: { ...chartOpts, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } }
+        });
+
+        new Chart(document.getElementById('chartQualifications'), {
+          type: 'doughnut',
+          data: {
+            labels: ${JSON.stringify(qualLabels)},
+            datasets: [{ data: ${JSON.stringify(qualData)}, backgroundColor: ['#1e88e5','#43a047','#fb8c00','#e53935','#8e24aa','#00acc1','#ffb300','#6d4c41','#546e7a','#d81b60'] }]
+          },
+          options: { ...chartOpts }
+        });
+
+        new Chart(document.getElementById('chartWeekly'), {
+          type: 'line',
+          data: {
+            labels: ${JSON.stringify(weekLabels)},
+            datasets: [{ label: 'Total Headcount', data: ${JSON.stringify(weekData)}, borderColor: '#1e88e5', backgroundColor: 'rgba(30,136,229,0.1)', fill: true, tension: 0.3 }]
+          },
+          options: { ...chartOpts, scales: { y: { beginAtZero: true } } }
+        });
+      });
+    </script>
+  `;
+};
+
+function getISOWeek(date) {
+  const d = new Date(date);
+  d.setHours(0,0,0,0);
+  d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
+  const week1 = new Date(d.getFullYear(), 0, 4);
+  return 1 + Math.round(((d - week1) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+}
 
 // ============================================================
 // INITIALIZE ON DOM READY
