@@ -9,13 +9,14 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     :root {
-      --bg: #0f172a; --bg2: #1e293b; --bg3: #263548;
-      --border: #1e3a5f; --text: #e2e8f0; --muted: #64748b;
-      --accent: #38bdf8; --green: #4ade80; --yellow: #facc15;
-      --red: #f87171; --purple: #c084fc;
+      --bg: #FAF7F2; --bg2: #FFFFFF; --bg3: #F0EDE8;
+      --border: #E5DFD6; --text: #2D2418; --muted: #8C7B6E;
+      --accent: #2563EB; --green: #16A34A; --yellow: #CA8A04;
+      --red: #DC2626; --purple: #7C3AED;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
+    html { scroll-behavior: smooth; background: #FAF7F2; }
+    html { background: #FAF7F2; }
     body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; font-size: 14px; }
 
     /* ── Top bar ── */
@@ -60,7 +61,7 @@
     /* ── Day header ── */
     .day-header { display: flex; align-items: flex-start; gap: 20px; margin-bottom: 16px; }
     .day-date-block { flex-shrink: 0; width: 52px; text-align: center; }
-    .day-date-num { font-size: 32px; font-weight: 300; line-height: 1; color: var(--accent); letter-spacing: -1px; }
+    .day-date-num { font-size: 32px; font-weight: 300; line-height: 1; color: var(--accent); letter-spacing: -1px; opacity: 0.7; }
     .day-date-weekday { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin-top: 2px; }
 
     /* ── Properties row ── */
