@@ -148,6 +148,7 @@
 <script>
 const DATA = { dailyLog: [], workDays: [], siteProgress: [], team: [], loaded: false };
 let charts = {};
+let resourcePlan = [];
 
 // GitHub raw URLs — no CORS issues
 const GH_BASE = 'https://raw.githubusercontent.com/AS76/ema5-data/main';
@@ -167,15 +168,17 @@ async function fetchJSON(path) {
 
 async function loadAll() {
   try {
-    const [dl, wd, sp] = await Promise.all([
+    const [dl, wd, sp, rp] = await Promise.all([
       fetchJSON(GH_BASE + '/daily_log.json'),
       fetchJSON(GH_BASE + '/work_days.json'),
-      fetchJSON(GH_BASE + '/site_progress.json')
+      fetchJSON(GH_BASE + '/site_progress.json'),
+      fetchJSON(GH_BASE + '/resource_plan.json')
     ]);
     DATA.dailyLog = dl;
     DATA.workDays = wd;
     DATA.siteProgress = sp;
     DATA.team = wd;
+    DATA.resourcePlan = rp || [];
     DATA.loaded = true;
     document.getElementById('syncTime').textContent = 'Synced ' + new Date().toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'});
     
@@ -277,6 +280,42 @@ function renderStats() {
   `;
 }
 
+function renderPlanActualChart() {
+  if (!DATA.resourcePlan || !DATA.resourcePlan.length) return;
+  if (typeof Chart === 'undefined') return;
+  
+  const rp = DATA.resourcePlan;
+  const labels = rp.map(r => r.week);
+  const plan = rp.map(r => r.plan);
+  const actual = rp.map(r => r.actual);
+  
+  // Destroy old chart if exists
+  if (charts.planActual) { try { charts.planActual.destroy(); } catch(e) {} }
+  
+  charts.planActual = new Chart(document.getElementById('chartPlanActual'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Planned', data: plan, backgroundColor: 'rgba(37,99,235,0.5)', borderColor: '#2563EB', borderWidth: 1 },
+        { label: 'Actual', data: actual, backgroundColor: 'rgba(22,163,74,0.5)', borderColor: '#16A34A', borderWidth: 1 }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+        tooltip: { mode: 'index', intersect: false }
+      },
+      scales: {
+        x: { ticks: { maxRotation: 45, minRotation: 45, font: { size: 10 } } },
+        y: { beginAtZero: true, title: { display: true, text: 'Headcount', color: '#64748b', font: { size: 11 } } }
+      }
+    }
+  });
+}
+
 function renderCharts() {
   // Guard: if Chart.js not loaded (CDN blocked), skip charts silently
   if (typeof Chart === 'undefined') {
@@ -328,6 +367,7 @@ function renderCharts() {
 function renderAll() {
   renderStats();
   renderCharts();
+  renderPlanActualChart();
   renderJournal();
   renderTeam();
   renderProgress();
