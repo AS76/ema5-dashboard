@@ -14,7 +14,7 @@ const API = {
   // PROXY_URL: 'https://ema5.asassi.cloud',
 
   // Rota from LMS Excel (aggregated counts by qualification)
-  ROTA_URL: 'https://ema5.asassi.cloud/rota',
+  ROTA_URL: '',  // rota served from /rota on VPS proxy — offline for now
 
   // Fallback: direct Google Sheets API (requires API key with CORS support)
   // For now we use the gviz tqx approach which works without API key
@@ -148,6 +148,18 @@ const API = {
   // Handles both gviz format and direct array format
   parseSheetData(raw, sheetName) {
     if (!raw || !Array.isArray(raw)) return [];
+
+    // GAS returns array-of-arrays: [[headers], [row1], [row2], ...]
+    // First row is headers, rest is data
+    if (raw.length > 0 && Array.isArray(raw[0]) && !raw[0].Date) {
+      const headers = raw[0].map(h => String(h || '').trim());
+      return raw.slice(1).map(row => {
+        const obj = {};
+        headers.forEach((h, i) => { obj[h] = row[i] ?? ''; });
+        return obj;
+      });
+    }
+
     return raw;
   },
 
@@ -172,7 +184,7 @@ const API = {
   rotaCacheTime: null,
 
   async fetchRota() {
-    if (!this.ROTA_URL) throw new Error('ROTA_URL not configured');
+    if (!this.ROTA_URL) return []; // rota not available without VPS proxy
     const response = await fetch(this.ROTA_URL);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const result = await response.json();
