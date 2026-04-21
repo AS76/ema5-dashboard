@@ -9,10 +9,11 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     :root {
-      --bg: #0f172a; --surface: #1e293b; --surface2: #334155;
-      --border: #475569; --text: #f1f5f9; --text2: #94a3b8;
+      --bg: #0f172a; --surface: #1e293b; --surface2: #2d3a4f;
+      --border: #334155; --text: #f1f5f9; --text2: #94a3b8;
       --accent: #3b82f6; --green: #22c55e; --yellow: #eab308;
-      --red: #ef4444; --purple: #a855f7;
+      --red: #ef4444; --purple: #a855f7; --orange: #f97316;
+      --teal: #14b8a6;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
@@ -21,10 +22,10 @@
     .layout { display: flex; min-height: 100vh; }
     .sidebar { width: 220px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; z-index: 100; }
     .sidebar-header { padding: 20px 16px 16px; border-bottom: 1px solid var(--border); }
-    .sidebar-logo { font-size: 18px; font-weight: 700; color: var(--text); }
+    .sidebar-logo { font-size: 18px; font-weight: 700; }
     .sidebar-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
     .sidebar nav { flex: 1; padding: 12px 8px; }
-    .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; color: var(--text2); font-size: 14px; font-weight: 500; transition: all 0.15s; margin-bottom: 2px; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; color: var(--text2); font-size: 14px; font-weight: 500; transition: all 0.15s; margin-bottom: 2px; user-select: none; }
     .nav-item:hover { background: var(--surface2); color: var(--text); }
     .nav-item.active { background: var(--accent); color: #fff; }
     .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
@@ -42,9 +43,10 @@
 
     /* ── Cards ── */
     .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 20px; }
-    .card-title { font-size: 13px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; }
+    .card-title { font-size: 13px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
+    .card-title span { font-size: 11px; color: var(--text2); font-weight: 400; text-transform: none; letter-spacing: 0; }
 
-    /* ── Stats row ── */
+    /* ── Stats ── */
     .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
     .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; }
     .stat-value { font-size: 28px; font-weight: 700; }
@@ -54,27 +56,45 @@
     .stat-yellow { color: var(--yellow); }
     .stat-red { color: var(--red); }
 
-    /* ── Table ── */
-    .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    th { text-align: left; padding: 10px 12px; color: var(--text2); font-weight: 600; border-bottom: 1px solid var(--border); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
-    td { padding: 10px 12px; border-bottom: 1px solid var(--surface2); white-space: nowrap; }
-    tr:hover td { background: var(--surface2); }
-    .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
-    .badge-blue { background: rgba(59,130,246,0.2); color: var(--accent); }
-    .badge-green { background: rgba(34,197,94,0.2); color: var(--green); }
-    .badge-yellow { background: rgba(234,179,8,0.2); color: var(--yellow); }
-    .badge-red { background: rgba(239,68,68,0.2); color: var(--red); }
-    .mono { font-family: monospace; font-size: 12px; }
-
     /* ── Charts ── */
     .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
     .chart-wrap { position: relative; height: 260px; }
     .chart-wide { grid-column: 1 / -1; }
 
+    /* ── Tables ── */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 10px 12px; color: var(--text2); font-weight: 600; border-bottom: 1px solid var(--border); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+    td { padding: 10px 12px; border-bottom: 1px solid var(--surface2); white-space: nowrap; }
+    tr:hover td { background: rgba(255,255,255,0.03); }
+    .mono { font-family: 'Courier New', monospace; font-size: 12px; }
+
     /* ── Page sections ── */
     .page { display: none; }
     .page.active { display: block; }
+
+    /* ── Gantt ── */
+    .gantt-section { margin-bottom: 28px; }
+    .gantt-month { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .gantt-row { display: flex; align-items: center; margin-bottom: 4px; min-height: 28px; }
+    .gantt-date { width: 80px; font-size: 11px; color: var(--text2); flex-shrink: 0; padding-right: 8px; }
+    .gantt-bar { height: 22px; border-radius: 4px; font-size: 11px; color: #fff; display: flex; align-items: center; padding: 0 8px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: calc(100% - 180px); cursor: default; }
+    .gantt-empty { width: 8px; }
+    .gantt-delay { width: 80px; flex-shrink: 0; font-size: 11px; padding-left: 8px; }
+    .gantt-delay.has-delay { color: var(--red); font-weight: 600; }
+    .gantt-tooltip { position: relative; }
+    .gantt-tooltip:hover::after { content: attr(data-tip); position: absolute; left: 0; top: -4px; transform: translateY(-100%); background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; font-size: 11px; color: var(--text); white-space: pre-wrap; max-width: 320px; z-index: 10; pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+
+    /* ── Filter tabs ── */
+    .filter-tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+    .tab { padding: 5px 14px; border-radius: 20px; border: 1px solid var(--border); cursor: pointer; font-size: 12px; color: var(--text2); transition: all 0.15s; }
+    .tab:hover { border-color: var(--accent); color: var(--accent); }
+    .tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+    /* ── Loading ── */
+    .loading { text-align: center; padding: 40px; color: var(--text2); }
+    .loading-spinner { width: 32px; height: 32px; border: 3px solid var(--surface2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     /* ── Mobile ── */
     @media (max-width: 768px) {
@@ -83,11 +103,6 @@
       .stats { grid-template-columns: 1fr 1fr; }
       .charts { grid-template-columns: 1fr; }
     }
-
-    /* ── Loading ── */
-    .loading { text-align: center; padding: 40px; color: var(--text2); }
-    .loading-spinner { width: 32px; height: 32px; border: 3px solid var(--surface2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
-    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
@@ -100,19 +115,19 @@
       <div class="sidebar-sub">Operations Dashboard</div>
     </div>
     <nav>
-      <div class="nav-item active" onclick="showPage('overview')">
+      <div class="nav-item active" id="nav-overview" onclick="showPage('overview')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
         <span>Overview</span>
       </div>
-      <div class="nav-item" onclick="showPage('daily-log')">
+      <div class="nav-item" id="nav-daily-log" onclick="showPage('daily-log')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         <span>Daily Log</span>
       </div>
-      <div class="nav-item" onclick="showPage('analytics')">
+      <div class="nav-item" id="nav-analytics" onclick="showPage('analytics')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
         <span>Analytics</span>
       </div>
-      <div class="nav-item" onclick="showPage('team')">
+      <div class="nav-item" id="nav-team" onclick="showPage('team')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         <span>Team</span>
       </div>
@@ -133,6 +148,14 @@
     <!-- ── Overview ── -->
     <div class="page active" id="page-overview">
       <div class="stats" id="statsRow"></div>
+
+      <!-- Downtime chart -->
+      <div class="card">
+        <div class="card-title">Downtime Hours by Cause <span>(from Issues — last 30 days)</span></div>
+        <div class="chart-wrap" style="height:220px"><canvas id="chartDowntime"></canvas></div>
+      </div>
+
+      <!-- Headcount chart -->
       <div class="charts">
         <div class="chart-wide card">
           <div class="card-title">Headcount — Last 14 Days</div>
@@ -147,11 +170,13 @@
           <div class="chart-wrap"><canvas id="chartQualifications"></canvas></div>
         </div>
       </div>
+
+      <!-- Recent entries -->
       <div class="card">
-        <div class="card-title">Recent Entries</div>
+        <div class="card-title">Recent Daily Log Entries</div>
         <div class="table-wrap">
           <table id="tableRecent">
-            <thead><tr><th>Date</th><th>Day</th><th>Total</th><th>Morning</th><th>Afternoon</th><th>Night</th><th>Companies</th><th>Qualifications</th></tr></thead>
+            <thead><tr><th>Date</th><th>Day</th><th>Total</th><th>M</th><th>A</th><th>N</th><th>Companies</th><th>Qualifications</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
@@ -160,14 +185,12 @@
 
     <!-- ── Daily Log ── -->
     <div class="page" id="page-daily-log">
-      <div class="card">
-        <div class="card-title">Daily Log — All Entries</div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Date</th><th>Day</th><th>Total</th><th>Morning</th><th>Afternoon</th><th>Night</th><th>Companies</th><th>Qualifications</th><th>Names</th></tr></thead>
-            <tbody id="tableDailyLog"></tbody>
-          </table>
-        </div>
+      <!-- Filter tabs -->
+      <div class="filter-tabs" id="monthTabs"></div>
+
+      <!-- Gantt timeline -->
+      <div id="ganttContainer">
+        <div class="loading"><div class="loading-spinner"></div>Loading activities...</div>
       </div>
     </div>
 
@@ -192,10 +215,10 @@
     <!-- ── Team ── -->
     <div class="page" id="page-team">
       <div class="card">
-        <div class="card-title">Team — All Members</div>
+        <div class="card-title">Team — All Members <span id="teamCount"></span></div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Name</th><th>Employee No</th><th>Qualification</th><th>Company</th><th>Supervisor</th><th>Last Seen</th></tr></thead>
+            <thead><tr><th>Name</th><th>Emp. No</th><th>Qualification</th><th>Company</th><th>Supervisor</th><th>Last Seen</th></tr></thead>
             <tbody id="tableTeam"></tbody>
           </table>
         </div>
@@ -208,7 +231,7 @@
 // ── Config ──────────────────────────────────────────────
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxGtL_0WUsZXjhorA6WhCI2zzv6JqP9kDmtK4q7CExt5Z4v7nyqJDcMtTyg8Nq9UYr76g/exec';
 
-const DATA = { dailyLog: [], team: [], loaded: false };
+const DATA = { dailyLog: [], team: [], issues: [], loaded: false };
 let charts = {};
 
 // ── Fetch from GAS ───────────────────────────────────────
@@ -216,7 +239,7 @@ async function fetchSheet(sheet) {
   const res = await fetch(`${GAS_URL}?sheet=${encodeURIComponent(sheet)}`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const json = await res.json();
-  return json.data; // [[headers], [row1], ...]
+  return json.data;
 }
 
 function parseRows(raw) {
@@ -229,15 +252,42 @@ function parseRows(raw) {
   });
 }
 
+// ── Parse downtime hours from free text ─────────────────
+function parseDelayHours(text) {
+  if (!text || text === '-' || text === '' || text === '0') return 0;
+  const str = String(text);
+  let hours = 0;
+  // "3h", "3 h", "3hours"
+  const hMatches = str.match(/(\d+(?:\.\d+)?)\s*h(?!ou)/gi);
+  if (hMatches) hours += hMatches.reduce((s, m) => s + parseFloat(m), 0);
+  // "1 hour", "2 hours"
+  const hourMatches = str.match(/(\d+(?:\.\d+)?)\s*hour/gi);
+  if (hourMatches) hours += hourMatches.reduce((s, m) => s + parseFloat(m.match(/\d+/)[0]), 0);
+  // "30m", "30 m", "30min"
+  const mMatches = str.match(/(\d+)\s*m(?!ou)/gi);
+  if (mMatches) hours += mMatches.reduce((s, m) => s + parseFloat(m) / 60, 0);
+  return Math.round(hours * 10) / 10;
+}
+
+// ── Parse delay cause (first sentence or first 60 chars) ─
+function parseDelayCause(text) {
+  if (!text || text === '-' || text === '' || text === '0') return '';
+  const str = String(text).trim();
+  const first = str.split('.')[0].trim();
+  return first.length > 60 ? first.slice(0, 60) + '…' : first;
+}
+
 // ── Load all data ────────────────────────────────────────
 async function loadAll() {
   try {
-    const [dlRaw, teamRaw] = await Promise.all([
+    const [dlRaw, teamRaw, issuesRaw] = await Promise.all([
       fetchSheet('Daily Log'),
-      fetchSheet('Team')
+      fetchSheet('Team'),
+      fetchSheet('Issues')
     ]);
     DATA.dailyLog = parseRows(dlRaw);
     DATA.team = parseRows(teamRaw);
+    DATA.issues = parseRows(issuesRaw);
     DATA.loaded = true;
 
     const now = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
@@ -246,48 +296,44 @@ async function loadAll() {
 
     renderAll();
   } catch (e) {
+    console.error(e);
     alert('Error loading data: ' + e.message);
   }
 }
 
-// ── Render everything ────────────────────────────────────
+// ── Render everything ───────────────────────────────────
 function renderAll() {
   const rows = [...DATA.dailyLog].sort((a, b) => new Date(b.Date) - new Date(a.Date));
+  const sorted = [...rows].sort((a, b) => new Date(a.Date) - new Date(b.Date));
   const last7 = rows.slice(0, 7);
-  const last30 = rows.slice(0, 30);
 
   renderStats(last7);
   renderRecent(rows.slice(0, 20));
   renderDailyLog(rows);
   renderTeam();
-  renderCharts(last7, rows);
+  renderCharts(sorted, last7, rows);
 }
 
 // ── Stats ───────────────────────────────────────────────
 function renderStats(last7) {
   const total7 = last7.reduce((s, r) => s + (Number(r.Total) || 0), 0);
   const avgDaily = last7.length ? Math.round(total7 / last7.length) : 0;
-  const totalRows = DATA.dailyLog.length;
   const latest = DATA.dailyLog[DATA.dailyLog.length - 1] || {};
   const peak = Math.max(...DATA.dailyLog.map(r => Number(r.Total) || 0));
 
+  // Downtime total
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 30);
+  const recentIssues = DATA.issues.filter(r => {
+    const d = new Date(r.Date);
+    return d >= cutoff;
+  });
+  const totalDowntime = recentIssues.reduce((s, r) => s + parseDelayHours(r.Delays), 0);
+
   document.getElementById('statsRow').innerHTML = `
-    <div class="stat">
-      <div class="stat-value stat-accent">${avgDaily}</div>
-      <div class="stat-label">Avg headcount / day (7d)</div>
-    </div>
-    <div class="stat">
-      <div class="stat-value stat-green">${totalRows}</div>
-      <div class="stat-label">Total log entries</div>
-    </div>
-    <div class="stat">
-      <div class="stat-value">${Number(latest.Total) || 0}</div>
-      <div class="stat-label">Latest entry headcount</div>
-    </div>
-    <div class="stat">
-      <div class="stat-value stat-yellow">${peak}</div>
-      <div class="stat-label">Peak headcount ever</div>
-    </div>
+    <div class="stat"><div class="stat-value stat-accent">${avgDaily}</div><div class="stat-label">Avg headcount / day (7d)</div></div>
+    <div class="stat"><div class="stat-value stat-green">${DATA.dailyLog.length}</div><div class="stat-label">Total log entries</div></div>
+    <div class="stat"><div class="stat-value">${Number(latest.Total) || 0}</div><div class="stat-label">Latest entry headcount</div></div>
+    <div class="stat"><div class="stat-value stat-red">${totalDowntime}h</div><div class="stat-label">Downtime (last 30d)</div></div>
   `;
 }
 
@@ -303,38 +349,137 @@ function renderRecent(rows) {
       <td>${r.Afternoon || 0}</td>
       <td>${r.Night || 0}</td>
       <td>${escHtml(r.Companies || '')}</td>
-      <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis">${escHtml(r.Qualifications || '')}</td>
+      <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis">${escHtml(r.Qualifications || '')}</td>
     </tr>
   `).join('');
 }
 
-// ── Daily log table ──────────────────────────────────────
+// ── Daily Log table + Gantt ──────────────────────────────
 function renderDailyLog(rows) {
-  const tbody = document.getElementById('tableDailyLog');
-  tbody.innerHTML = rows.map(r => `
-    <tr>
-      <td class="mono">${fmtDate(r.Date)}</td>
-      <td>${r.Day || ''}</td>
-      <td><strong>${r.Total || 0}</strong></td>
-      <td>${r.Morning || 0}</td>
-      <td>${r.Afternoon || 0}</td>
-      <td>${r.Night || 0}</td>
-      <td>${escHtml(r.Companies || '')}</td>
-      <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis">${escHtml(r.Qualifications || '')}</td>
-      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;color:var(--text2)">${escHtml(r.Names || '')}</td>
-    </tr>
-  `).join('');
+  // Build month filter tabs
+  const months = {};
+  rows.forEach(r => {
+    const d = new Date(r.Date);
+    if (isNaN(d)) return;
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const label = d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+    months[key] = label;
+  });
+  const sortedMonths = Object.keys(months).sort().reverse();
+  const latestMonth = sortedMonths[0];
+
+  const tabsEl = document.getElementById('monthTabs');
+  tabsEl.innerHTML = `
+    <div class="tab active" onclick="renderGantt('${latestMonth}', this)">Latest Month</div>
+    ${sortedMonths.slice(1).map((m, i) => `<div class="tab" onclick="renderGantt('${m}', this)">${months[m]}</div>`).join('')}
+    <div class="tab" onclick="renderGantt('all', this)">All</div>
+  `;
+
+  // Initial render: latest month
+  renderGantt(latestMonth, tabsEl.querySelector('.tab'));
 }
 
-// ── Team table ──────────────────────────────────────────
+function renderGantt(monthKey, tabEl) {
+  // Update active tab
+  document.querySelectorAll('#monthTabs .tab').forEach(t => t.classList.remove('active'));
+  if (tabEl) tabEl.classList.add('active');
+
+  const rows = [...DATA.dailyLog].sort((a, b) => new Date(a.Date) - new Date(b.Date));
+
+  // Build Issues index by date
+  const issuesByDate = {};
+  DATA.issues.forEach(r => {
+    const d = new Date(r.Date);
+    if (isNaN(d)) return;
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    issuesByDate[key] = r;
+  });
+
+  // Filter rows
+  const filtered = monthKey === 'all' ? rows : rows.filter(r => {
+    const d = new Date(r.Date);
+    if (isNaN(d)) return false;
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    return key === monthKey;
+  });
+
+  // Group by month label
+  const byMonth = {};
+  filtered.forEach(r => {
+    const d = new Date(r.Date);
+    if (isNaN(d)) return;
+    const mLabel = d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+    if (!byMonth[mLabel]) byMonth[mLabel] = [];
+    byMonth[mLabel].push(r);
+  });
+
+  // Section colors
+  const sectionColors = {
+    'DEMATIC XBelt sorter': '#3b82f6',
+    'DEMATIC': '#22c55e',
+    'TGW': '#f59e0b',
+    'Unknown': '#64748b'
+  };
+  const getColor = (section) => sectionColors[section] || sectionColors['Unknown'];
+
+  // Render
+  const container = document.getElementById('ganttContainer');
+  if (filtered.length === 0) {
+    container.innerHTML = '<div class="card"><div class="card-title">No data for this period</div></div>';
+    return;
+  }
+
+  let html = '';
+  Object.entries(byMonth).forEach(([monthLabel, monthRows]) => {
+    html += `<div class="gantt-section">
+      <div class="gantt-month">${monthLabel}</div>`;
+
+    // Gantt header
+    html += `<div style="display:flex;align-items:center;margin-bottom:6px;padding-left:88px">
+      <div style="flex:1;font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px">Activities</div>
+      <div style="width:80px;font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;padding-left:8px">Delay</div>
+    </div>`;
+
+    monthRows.slice().reverse().forEach(r => {
+      const d = new Date(r.Date);
+      const dateStr = d.toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' });
+      const dateKey = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      const issue = issuesByDate[dateKey];
+      const activities = issue ? (issue.Activities || '') : (r.Qualifications || '');
+      const delay = issue ? parseDelayHours(issue.Delays) : 0;
+      const delayCause = issue ? parseDelayCause(issue.Delays) : '';
+      const section = issue ? (issue.Section || 'Unknown') : 'Unknown';
+      const barColor = getColor(section);
+
+      // Wrap long activities
+      const actShort = activities.length > 70 ? activities.slice(0, 70) + '…' : (activities || '—');
+      const actTitle = escHtml(activities || '');
+
+      html += `<div class="gantt-row">
+        <div class="gantt-date mono">${dateStr}</div>
+        <div class="gantt-tooltip" data-tip="${actTitle}">
+          <div class="gantt-bar" style="background:${barColor};opacity:${activities ? 1 : 0.3}" title="${actTitle}">${escHtml(actShort)}</div>
+        </div>
+        <div class="gantt-delay ${delay > 0 ? 'has-delay' : ''}">${delay > 0 ? `${delay}h` : '—'}</div>
+      </div>`;
+    });
+
+    html += '</div>';
+  });
+
+  container.innerHTML = html;
+}
+
+// ── Team ────────────────────────────────────────────────
 function renderTeam() {
   const tbody = document.getElementById('tableTeam');
   const rows = [...DATA.team].sort((a, b) => (a.Name || '').localeCompare(b.Name || ''));
+  document.getElementById('teamCount').textContent = `— ${rows.length} members`;
   tbody.innerHTML = rows.map(r => `
     <tr>
       <td><strong>${escHtml(r.Name || '')}</strong></td>
       <td class="mono">${escHtml(r['Employee No'] || '')}</td>
-      <td><span class="badge badge-blue">${escHtml(r.Qualification || '')}</span></td>
+      <td><span class="badge" style="background:rgba(59,130,246,0.2);color:var(--accent);padding:2px 8px;border-radius:12px;font-size:11px">${escHtml(r.Qualification || '')}</span></td>
       <td>${escHtml(r.Company || '')}</td>
       <td>${escHtml(r.Supervisor || '')}</td>
       <td class="mono" style="color:var(--text2)">${fmtDate(r['Last Seen'] || '')}</td>
@@ -343,36 +488,31 @@ function renderTeam() {
 }
 
 // ── Charts ───────────────────────────────────────────────
-function renderCharts(last7, allRows) {
-  Object.values(charts).forEach(c => c.destroy());
+function renderCharts(sorted, last7, allRows) {
+  Object.values(charts).forEach(c => { try { c.destroy(); } catch(e) {} });
   charts = {};
 
-  const sorted = [...allRows].sort((a, b) => new Date(a.Date) - new Date(b.Date));
   const last14 = sorted.slice(-14);
 
-  // Headcount 14 days
-  const labels = last14.map(r => {
+  // ── Headcount 14 days (stacked bar) ──
+  const labels14 = last14.map(r => {
     const d = new Date(r.Date);
     return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
   });
-  const mData = last14.map(r => Number(r.Morning) || 0);
-  const aData = last14.map(r => Number(r.Afternoon) || 0);
-  const nData = last14.map(r => Number(r.Night) || 0);
-
   charts.hc = new Chart(document.getElementById('chartHeadcount'), {
     type: 'bar',
     data: {
-      labels,
+      labels: labels14,
       datasets: [
-        { label: 'Morning', data: mData, backgroundColor: '#3b82f6' },
-        { label: 'Afternoon', data: aData, backgroundColor: '#f59e0b' },
-        { label: 'Night', data: nData, backgroundColor: '#a855f7' }
+        { label: 'Morning', data: last14.map(r => Number(r.Morning)||0), backgroundColor: '#3b82f6' },
+        { label: 'Afternoon', data: last14.map(r => Number(r.Afternoon)||0), backgroundColor: '#f59e0b' },
+        { label: 'Night', data: last14.map(r => Number(r.Night)||0), backgroundColor: '#a855f7' }
       ]
     },
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } }
   });
 
-  // Qualifications doughnut
+  // ── Qualifications doughnut ──
   const qCounts = {};
   sorted.forEach(r => {
     const qs = (r.Qualifications || '').split(',');
@@ -384,14 +524,13 @@ function renderCharts(last7, allRows) {
   const qLabels = Object.keys(qCounts).sort((a, b) => qCounts[b] - qCounts[a]).slice(0, 8);
   const qData = qLabels.map(k => qCounts[k]);
   const qColors = ['#3b82f6','#22c55e','#f59e0b','#ef4444','#a855f7','#06b6d4','#84cc16','#f97316'];
-
   charts.quals = new Chart(document.getElementById('chartQualifications'), {
     type: 'doughnut',
     data: { labels: qLabels, datasets: [{ data: qData, backgroundColor: qColors }] },
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } } }
   });
 
-  // Weekly trend
+  // ── Weekly trend ──
   const weekly = {};
   sorted.forEach(r => {
     const d = new Date(r.Date);
@@ -401,47 +540,74 @@ function renderCharts(last7, allRows) {
   const wKeys = Object.keys(weekly).sort();
   charts.weekly = new Chart(document.getElementById('chartWeekly'), {
     type: 'line',
-    data: {
-      labels: wKeys,
-      datasets: [{ label: 'Total Headcount', data: wKeys.map(k => weekly[k]), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.3 }]
-    },
+    data: { labels: wKeys, datasets: [{ label: 'Total Headcount', data: wKeys.map(k => weekly[k]), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.3 }] },
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
   });
 
-  // Analytics charts
-  if (document.getElementById('chartDaily30')) {
-    const last30 = sorted.slice(-30);
-    charts.d30 = new Chart(document.getElementById('chartDaily30'), {
+  // ── Downtime chart (Overview) ──
+  const cutoff30 = new Date(); cutoff30.setDate(cutoff30.getDate() - 30);
+  const recentIssues = DATA.issues.filter(r => {
+    const d = new Date(r.Date);
+    return d >= cutoff30;
+  });
+
+  // Aggregate downtime by cause
+  const downtimeByCause = {};
+  recentIssues.forEach(r => {
+    const h = parseDelayHours(r.Delays);
+    if (h > 0) {
+      const cause = parseDelayCause(r.Delays) || 'Unknown';
+      downtimeByCause[cause] = (downtimeByCause[cause] || 0) + h;
+    }
+  });
+
+  const sortedCauses = Object.entries(downtimeByCause).sort((a, b) => b[1] - a[1]);
+  const downtimeLabels = sortedCauses.map(([c]) => c.length > 40 ? c.slice(0, 40) + '…' : c);
+  const downtimeData = sortedCauses.map(([, h]) => h);
+  const downtimeColors = downtimeData.map((_, i) => {
+    const palette = ['#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#a855f7','#06b6d4','#84cc16'];
+    return palette[i % palette.length];
+  });
+
+  if (downtimeLabels.length > 0) {
+    charts.downtime = new Chart(document.getElementById('chartDowntime'), {
       type: 'bar',
-      data: {
-        labels: last30.map(r => {
-          const d = new Date(r.Date);
-          return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
-        }),
-        datasets: [
-          { label: 'Morning', data: last30.map(r => Number(r.Morning)||0), backgroundColor: '#3b82f6' },
-          { label: 'Afternoon', data: last30.map(r => Number(r.Afternoon)||0), backgroundColor: '#f59e0b' },
-          { label: 'Night', data: last30.map(r => Number(r.Night)||0), backgroundColor: '#a855f7' }
-        ]
-      },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } }
+      data: { labels: downtimeLabels, datasets: [{ label: 'Hours lost', data: downtimeData, backgroundColor: downtimeColors }] },
+      options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, title: { display: true, text: 'Hours', color: '#94a3b8' } } } }
     });
-
-    charts.quals2 = new Chart(document.getElementById('chartQualsDonut'), {
-      type: 'doughnut',
-      data: { labels: qLabels, datasets: [{ data: qData, backgroundColor: qColors }] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } } }
-    });
-
-    charts.weekly2 = new Chart(document.getElementById('chartWeekly2'), {
-      type: 'line',
-      data: {
-        labels: wKeys,
-        datasets: [{ label: 'Total Headcount', data: wKeys.map(k => weekly[k]), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.3 }]
-      },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
-    });
+  } else {
+    document.getElementById('chartDowntime').parentElement.innerHTML += '<div style="text-align:center;padding:20px;color:var(--text2);font-size:13px">No downtime recorded in the last 30 days ✅</div>';
   }
+
+  // ── Analytics charts ──
+  const last30 = sorted.slice(-30);
+  charts.d30 = new Chart(document.getElementById('chartDaily30'), {
+    type: 'bar',
+    data: {
+      labels: last30.map(r => {
+        const d = new Date(r.Date);
+        return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+      }),
+      datasets: [
+        { label: 'Morning', data: last30.map(r => Number(r.Morning)||0), backgroundColor: '#3b82f6' },
+        { label: 'Afternoon', data: last30.map(r => Number(r.Afternoon)||0), backgroundColor: '#f59e0b' },
+        { label: 'Night', data: last30.map(r => Number(r.Night)||0), backgroundColor: '#a855f7' }
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } }
+  });
+
+  charts.quals2 = new Chart(document.getElementById('chartQualsDonut'), {
+    type: 'doughnut',
+    data: { labels: qLabels, datasets: [{ data: qData, backgroundColor: qColors }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } } }
+  });
+
+  charts.weekly2 = new Chart(document.getElementById('chartWeekly2'), {
+    type: 'line',
+    data: { labels: wKeys, datasets: [{ label: 'Total Headcount', data: wKeys.map(k => weekly[k]), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.3 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+  });
 }
 
 // ── Navigation ───────────────────────────────────────────
@@ -449,7 +615,7 @@ function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById(`page-${name}`).classList.add('active');
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  event.currentTarget.classList.add('active');
+  document.getElementById(`nav-${name}`).classList.add('active');
   const titles = { overview: 'Overview', 'daily-log': 'Daily Log', analytics: 'Analytics', team: 'Team' };
   document.getElementById('pageTitle').textContent = titles[name] || name;
 }
@@ -463,7 +629,7 @@ function fmtDate(v) {
 }
 
 function escHtml(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 function getISOWeek(date) {
