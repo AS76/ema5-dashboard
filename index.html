@@ -167,11 +167,10 @@ async function fetchJSON(path) {
 
 async function loadAll() {
   try {
-    const [dl, wd, sp, tm] = await Promise.all([
+    const [dl, wd, sp] = await Promise.all([
       fetchJSON(GH_BASE + '/daily_log.json'),
       fetchJSON(GH_BASE + '/work_days.json'),
-      fetchJSON(GH_BASE + '/site_progress.json'),
-      fetchJSON(GH_BASE + '/work_days.json') // team from work_days
+      fetchJSON(GH_BASE + '/site_progress.json')
     ]);
     DATA.dailyLog = dl;
     DATA.workDays = wd;
@@ -179,7 +178,25 @@ async function loadAll() {
     DATA.team = wd;
     DATA.loaded = true;
     document.getElementById('syncTime').textContent = 'Synced ' + new Date().toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'});
-    renderAll();
+    
+    // Ensure Chart.js is available before rendering charts
+    let chartReady = typeof Chart !== 'undefined';
+    let attempts = 0;
+    while (!chartReady && attempts < 10) {
+      await new Promise(r => setTimeout(r, 200));
+      chartReady = typeof Chart !== 'undefined';
+      attempts++;
+    }
+    
+    if (chartReady) {
+      renderAll();
+    } else {
+      renderStats();
+      renderJournal();
+      renderTeam();
+      renderProgress();
+      document.getElementById('journalEntries').innerHTML = `<div class="error-msg">Charts: Chart.js not loaded (CDN blocked by browser). Try a different browser.</div>`;
+    }
   } catch(e) {
     document.getElementById('journalEntries').innerHTML = `<div class="error-msg">Error loading: ${e.message}</div>`;
   }
@@ -189,16 +206,18 @@ function parseDateDMY(s) {
   if (!s || typeof s !== 'string') return null;
   const parts = s.trim().split(/[\/\-]/);
   if (parts.length !== 3) return null;
-  // Try DD/MM/YY or DD-MM-YY
   let dd, mm, yy;
-  if (parts[0].length === 2 && parts[1].length === 2 && parts[2].length === 2) {
+  if (parts[2].length === 4) {
+    // DD/MM/YYYY
+    dd = parseInt(parts[0]); mm = parseInt(parts[1]); yy = parseInt(parts[2]);
+  } else if (parts[2].length === 2) {
+    // DD/MM/YY
     dd = parseInt(parts[0]); mm = parseInt(parts[1]); yy = parseInt(parts[2]);
     yy = yy < 50 ? 2000 + yy : 1900 + yy;
-  } else if (parts[0].length === 2 && parts[1].length === 2 && parts[2].length === 4) {
-    dd = parseInt(parts[0]); mm = parseInt(parts[1]); yy = parseInt(parts[2]);
   } else {
     return null;
   }
+  if (isNaN(dd) || isNaN(mm) || isNaN(yy)) return null;
   return new Date(yy, mm - 1, dd);
 }
 
@@ -259,6 +278,11 @@ function renderStats() {
 }
 
 function renderCharts() {
+  // Guard: if Chart.js not loaded (CDN blocked), skip charts silently
+  if (typeof Chart === 'undefined') {
+    console.warn('Chart.js not loaded — skipping charts');
+    return;
+  }
   Object.values(charts).forEach(c => { try { c.destroy(); } catch(e) {} });
   charts = {};
   const shifts = computeShiftsByDate(DATA.workDays);
