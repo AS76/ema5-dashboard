@@ -102,7 +102,10 @@ const API = {
     const url = `${this.GAS_URL}?sheet=${encodeURIComponent(sheetName)}`;
     const response = await fetch(url);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return response.json();
+    const result = await response.json();
+    // GAS returns { data: [[headers], [row1], ...], sheet: "..." }
+    // extract the data array so parseSheetData can handle it
+    return result.data || [];
   },
 
   // Method 2: Via Google Visualization API (gviz) — no API key needed
