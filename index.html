@@ -95,7 +95,7 @@
     .gantt-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; box-shadow: var(--shadow); margin-bottom: 14px; }
     .gantt-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin-bottom: 16px; }
     .gantt-row { display: flex; align-items: center; margin-bottom: 10px; gap: 12px; }
-    .gantt-label { font-size: 12px; font-weight: 500; min-width: 180px; max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .gantt-label { font-size: 12px; font-weight: 500; min-width: 120px; max-width: 280px; white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.3; }
     .gantt-bar-wrap { flex: 1; position: relative; height: 20px; }
     .gantt-bar { position: absolute; height: 100%; border-radius: 4px; min-width: 4px; }
     .gantt-bar.planned { background: rgba(37,99,235,0.25); border: 1.5px solid var(--accent); }
@@ -463,8 +463,8 @@ function renderKPIs() {
 
   // HC Today
   document.getElementById('kpi-hc').textContent = todayHC.total;
-  let hcSub = `M ${todayHC.morning} · A ${todayHC.afternoon} · N ${todayHC.night}`;
-  if (todayHC.open) hcSub += ` · <span class="warn">⚠ ${todayHC.open} forgot checkout</span>`;
+  let hcSub = `Mattina <b>${todayHC.morning}</b> · Pomeriggio <b>${todayHC.afternoon}</b> · Notte <b>${todayHC.night}</b>`;
+  if (todayHC.open) hcSub += `<br><span class="warn">⚠ ${todayHC.open} non hanno timbrato l'uscita</span>`;
   document.getElementById('kpi-hc-sub').innerHTML = hcSub;
 
   // Work days on site
@@ -475,7 +475,7 @@ function renderKPIs() {
   let totalH = 0;
   DATA.dailyLog.forEach(r => {
     const d = parseDateDMY(r.Date || r.date);
-    if (d && d >= cutoff) totalH += delayHours(r.Delays || r.delays);
+    if (d && d >= cutoff) totalH += Math.min(delayHours(r.Delays || r.delays), 24);
   });
   document.getElementById('kpi-dt').textContent = totalH + 'h';
 
@@ -587,6 +587,17 @@ function renderGantt() {
   const items = DATA.siteProgress.filter(r => r['Planned Start'] || r['Planned Finish']).slice(0, 12);
   if (!items.length) { container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">No schedule data available</div>'; return; }
 
+  // Date axis
+  const days = Math.ceil((maxDate - minDate) / 86400000);
+  const axisSteps = days <= 30 ? 5 : days <= 90 ? 10 : 30;
+  let axisHtml = '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:8px;padding-right:8px">';
+  for (let i = 0; i <= axisSteps; i++) {
+    const d = new Date(minDate.getTime() + (maxDate - minDate) * i / axisSteps);
+    axisHtml += '<span>' + d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'}) + '</span>';
+  }
+  axisHtml += '</div>';
+  html = axisHtml + html;
+
   // Build date range from items
   const allDates = [];
   items.forEach(r => {
@@ -605,7 +616,7 @@ function renderGantt() {
 
   let html = '';
   items.forEach(r => {
-    const desc = esc((r.Description || r.description || '').slice(0, 40));
+    const desc = esc(r.Description || r.description || '');
     const plannedStart = parseDateDMY(r['Planned Start']);
     const plannedFinish = parseDateDMY(r['Planned Finish']);
     const actualStart = parseDateDMY(r['Actual Start']);
