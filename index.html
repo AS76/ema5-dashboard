@@ -128,21 +128,35 @@ const DATA = { dailyLog: [], workDays: [], siteProgress: [], team: [], loaded: f
 let charts = {};
 
 // GitHub raw URLs — no CORS issues
-const GH_BASE = 'https://raw.githubusercontent.com/AS76/ema5-data/main?cb=' + Date.now();
+const GH_BASE = 'https://raw.githubusercontent.com/AS76/ema5-data/main';
 
 async function fetchJSON(path) {
-  const r = await fetch(path);
-  if (!r.ok) throw new Error(r.status + ' ' + r.statusText);
-  return r.json();
+  try {
+    const r = await fetch(path);
+    if (!r.ok) {
+      // Try without cache-busting if it fails
+      const altPath = path.replace(/\?cb=\d+/, '');
+      if (altPath !== path) {
+        const r2 = await fetch(altPath);
+        if (!r2.ok) throw new Error(r2.status + ' ' + r2.statusText + ' [URL: ' + altPath.slice(0,80) + ']');
+        return r2.json();
+      }
+      throw new Error(r.status + ' ' + r.statusText + ' [URL: ' + path.slice(0,80) + ']');
+    }
+    return r.json();
+  } catch(e) {
+    console.error('fetchJSON error:', e);
+    throw e;
+  }
 }
 
 async function loadAll() {
   try {
     const [dl, wd, sp, tm] = await Promise.all([
-      fetchJSON(`${GH_BASE}/daily_log.json`),
-      fetchJSON(`${GH_BASE}/work_days.json`),
-      fetchJSON(`${GH_BASE}/site_progress.json`),
-      fetchJSON(`${GH_BASE}/work_days.json`) // team from work_days
+      fetchJSON(GH_BASE + '/daily_log.json?' + 'cb=' + Date.now()),
+      fetchJSON(GH_BASE + '/work_days.json?' + 'cb=' + Date.now()),
+      fetchJSON(GH_BASE + '/site_progress.json?' + 'cb=' + Date.now()),
+      fetchJSON(GH_BASE + '/work_days.json?' + 'cb=' + Date.now()) // team from work_days
     ]);
     DATA.dailyLog = dl;
     DATA.workDays = wd;
