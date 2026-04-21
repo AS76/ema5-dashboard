@@ -13,10 +13,10 @@ const API = {
   //
   // Example GAS URL (replace with your deployed URL):
   // Local VPS proxy (CORS-friendly) — EMA5 proxy server on Hostinger
-  PROXY_URL: 'https://securities-proposal-affiliate-creative.trycloudflare.com',
+  PROXY_URL: 'https://ema5.asassi.cloud',
 
   // Rota from LMS Excel (aggregated counts by qualification)
-  ROTA_URL: 'https://securities-proposal-affiliate-creative.trycloudflare.com/rota',
+  ROTA_URL: 'https://ema5.asassi.cloud/rota',
 
   // Fallback: direct Google Sheets API (requires API key with CORS support)
   // For now we use the gviz tqx approach which works without API key
