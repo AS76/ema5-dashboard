@@ -155,13 +155,14 @@
 
 <script>
 const SB_URL = 'https://lntkgvdvjyeaojavugxg.supabase.co';
+const PROXY = 'https://corsproxy.io/?';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxudGtndmR2anllYW9qYXZ1Z3hnIiwiaWQiOiJzdXBhYmFzZS1wbGFjZWhvbGQiLCJleHAiOjE5ODM4MTI5OTZ9.C0fV42K2dHNngGrTfwMgRQHfd9FmpwQRU1YW3R1p3a0';
 const DATA = { dailyLog: [], workDays: [], siteProgress: [], team: [], loaded: false };
 let charts = {};
 
 // ── Fetch helpers ──────────────────────────────────────────────
 async function fetchSB(table, params = '') {
-  const r = await fetch(`${SB_URL}/rest/v1/${table}?${params}`, {
+  const r = await fetch(`${PROXY}${encodeURIComponent(SB_URL)}/rest/v1/${table}?${params}`, {
     headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` }
   });
   if (!r.ok) throw new Error(r.status + ' ' + r.statusText);
