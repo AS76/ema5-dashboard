@@ -285,14 +285,14 @@
         <div class="kpi-sub" id="kpi-hc-sub">—</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">⬤ Work Days on Site</div>
+        <div class="kpi-label">⬤ Total Shifts Recorded</div>
         <div class="kpi-value green" id="kpi-wd">—</div>
-        <div class="kpi-sub">Since 11-Dec-2025</div>
+        <div class="kpi-sub">4,587 records</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">⬤ Total Downtime</div>
+        <div class="kpi-label">⬤ Downtime (30d)</div>
         <div class="kpi-value red" id="kpi-dt">—</div>
-        <div class="kpi-sub" id="kpi-dt-sub">Since project start</div>
+        <div class="kpi-sub" id="kpi-dt-sub">Last 30 days</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">⬤ Journal Entries</div>
@@ -468,11 +468,15 @@ function renderKPIs() {
   document.getElementById('kpi-hc-sub').innerHTML = hcSub;
 
   // Work days on site
-  document.getElementById('kpi-wd').textContent = dates.length;
+  document.getElementById('kpi-wd').textContent = DATA.workDays.length.toLocaleString();
 
-  // Total downtime from project start
+  // Downtime last 30 days
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 30);
   let totalH = 0;
-  DATA.dailyLog.forEach(r => { totalH += delayHours(r.Delays || r.delays); });
+  DATA.dailyLog.forEach(r => {
+    const d = parseDateDMY(r.Date || r.date);
+    if (d && d >= cutoff) totalH += delayHours(r.Delays || r.delays);
+  });
   document.getElementById('kpi-dt').textContent = totalH + 'h';
 
   // Journal entries
