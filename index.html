@@ -12,7 +12,6 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html { scroll-behavior: smooth; background: var(--bg); }
     body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; font-size: 14px; }
-    a { color: var(--accent); text-decoration: none; }
 
     .topbar { position: sticky; top: 0; z-index: 50; background: var(--bg); border-bottom: 1px solid var(--border); padding: 0 32px; height: 56px; display: flex; align-items: center; justify-content: space-between; }
     .topbar-left { display: flex; align-items: center; }
@@ -27,7 +26,6 @@
 
     .content { max-width: 900px; margin: 0 auto; padding: 32px 24px 80px; }
 
-    /* ── Overview ── */
     .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
     .stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; }
     .stat-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin-bottom: 4px; }
@@ -40,10 +38,9 @@
     .chart-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin-bottom: 12px; }
     .chart-wrap { height: 180px; position: relative; }
 
-    /* ── Journal ── */
     .month-group { margin-bottom: 40px; }
     .month-label { font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); padding-bottom: 12px; border-bottom: 1px solid var(--border); margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center; }
-    .month-count { font-size: 11px; font-weight: 400; letter-spacing: 0; text-transform: none; }
+    .month-count { font-weight: 400; letter-spacing: 0; text-transform: none; }
 
     .day-entry { padding: 20px 0; border-bottom: 1px solid rgba(229,223,214,0.5); }
     .day-entry:last-child { border-bottom: none; }
@@ -58,30 +55,21 @@
     .prop-value { font-weight: 500; }
     .prop.green .prop-value { color: var(--green); }
     .prop.red .prop-value { color: var(--red); }
-    .prop.yellow .prop-value { color: var(--yellow); }
 
     .section { margin-bottom: 10px; }
     .section-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
     .section-label .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
     .section-content { font-size: 13px; color: var(--text); padding-left: 11px; }
-    .section-content p { margin-bottom: 3px; }
-    .section-content.empty { color: var(--muted); font-style: italic; font-size: 12px; }
-    .delay-item { display: flex; align-items: baseline; gap: 8px; margin-bottom: 3px; }
-    .delay-hours { font-size: 12px; font-weight: 700; color: var(--red); min-width: 28px; }
-    .delay-cause { font-size: 13px; color: var(--text); }
     .activity-item::after { content: ' ·'; color: var(--muted); }
     .activity-item:last-child::after { content: ''; }
-
     .entry-footer { font-size: 11px; color: var(--muted); padding-left: 11px; margin-top: 6px; }
 
-    /* ── Filters ── */
     .filter-row { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; align-items: center; }
     .filter-label { font-size: 12px; color: var(--muted); margin-right: 4px; }
     .pill { padding: 5px 14px; border-radius: 20px; border: 1px solid var(--border); cursor: pointer; font-size: 12px; color: var(--muted); transition: all 0.15s; user-select: none; }
     .pill:hover { border-color: var(--accent); color: var(--accent); }
     .pill.active { background: var(--accent); border-color: var(--accent); color: white; font-weight: 600; }
 
-    /* ── Team ── */
     .team-dept { margin-bottom: 28px; }
     .dept-header { font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); padding-bottom: 10px; border-bottom: 1px solid var(--border); margin-bottom: 4px; display: flex; justify-content: space-between; }
     .dept-count { font-weight: 400; letter-spacing: 0; text-transform: none; }
@@ -90,12 +78,9 @@
     .person-name { font-weight: 500; min-width: 170px; }
     .person-qual { color: var(--muted); min-width: 150px; font-size: 12px; }
     .person-company { color: var(--muted); flex: 1; font-size: 12px; }
-    .person-seen { font-size: 11px; color: var(--muted); min-width: 80px; text-align: right; font-family: monospace; }
 
-    /* ── Views ── */
     .view { display: none; }
     .view.active { display: block; }
-
     .loading { padding: 60px 0; text-align: center; color: var(--muted); }
     .error-msg { background: #FEF2F2; border: 1px solid #FECACA; border-radius: 8px; padding: 12px 16px; color: var(--red); font-size: 13px; }
 
@@ -125,46 +110,28 @@
 </div>
 
 <div class="content">
-  <!-- Journal view -->
   <div class="view active" id="view-journal">
     <div class="stats-row" id="statsRow"></div>
     <div class="charts-grid">
-      <div class="chart-card">
-        <div class="chart-title">Headcount — Last 14 Days</div>
-        <div class="chart-wrap"><canvas id="chartHC"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-title">Delays by Cause (30d)</div>
-        <div class="chart-wrap"><canvas id="chartDelay"></canvas></div>
-      </div>
+      <div class="chart-card"><div class="chart-title">Headcount — Last 14 Days</div><div class="chart-wrap"><canvas id="chartHC"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">Delays by Cause (30d)</div><div class="chart-wrap"><canvas id="chartDelay"></canvas></div></div>
     </div>
     <div class="filter-row" id="monthFilter"></div>
     <div id="journalEntries"></div>
   </div>
-
-  <!-- Team view -->
-  <div class="view" id="view-team">
-    <div id="teamContent"></div>
-  </div>
-
-  <!-- Progress view -->
-  <div class="view" id="view-progress">
-    <div id="progressContent"></div>
-  </div>
+  <div class="view" id="view-team"><div id="teamContent"></div></div>
+  <div class="view" id="view-progress"><div id="progressContent"></div></div>
 </div>
 
 <script>
-const SB_URL = 'https://lntkgvdvjyeaojavugxg.supabase.co';
-const PROXY = 'https://corsproxy.io/?';
-const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxudGtndmR2anllYW9qYXZ1Z3hnIiwiaWQiOiJzdXBhYmFzZS1wbGFjZWhvbGQiLCJleHAiOjE5ODM4MTI5OTZ9.C0fV42K2dHNngGrTfwMgRQHfd9FmpwQRU1YW3R1p3a0';
 const DATA = { dailyLog: [], workDays: [], siteProgress: [], team: [], loaded: false };
 let charts = {};
 
-// ── Fetch helpers ──────────────────────────────────────────────
-async function fetchSB(table, params = '') {
-  const r = await fetch(`${PROXY}${encodeURIComponent(SB_URL)}/rest/v1/${table}?${params}`, {
-    headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` }
-  });
+// GitHub raw URLs — no CORS issues
+const GH_BASE = 'https://raw.githubusercontent.com/AS76/ema5-data/main';
+
+async function fetchJSON(path) {
+  const r = await fetch(path);
   if (!r.ok) throw new Error(r.status + ' ' + r.statusText);
   return r.json();
 }
@@ -172,33 +139,49 @@ async function fetchSB(table, params = '') {
 async function loadAll() {
   try {
     const [dl, wd, sp, tm] = await Promise.all([
-      fetchSB('Daily%20Log', 'select=*&order=Date.desc'),
-      fetchSB('Work%20Days', 'select=Date,Start%20Time,Status,Qualification,Company&order=Date.desc'),
-      fetchSB('Site%20Progress', 'select=*&limit=50&order=ID'),
-      fetchSB('Work%20Days', 'select=First%20Name,Last%20Name,Employee%20No,Qualification,Company,Supervisor,Status,Date%20Info%20Column&limit=5000')
+      fetchJSON(`${GH_BASE}/daily_log.json`),
+      fetchJSON(`${GH_BASE}/work_days.json`),
+      fetchJSON(`${GH_BASE}/site_progress.json`),
+      fetchJSON(`${GH_BASE}/work_days.json`) // team from work_days
     ]);
     DATA.dailyLog = dl;
     DATA.workDays = wd;
     DATA.siteProgress = sp;
-    DATA.team = tm;
+    DATA.team = wd;
     DATA.loaded = true;
     document.getElementById('syncTime').textContent = 'Synced ' + new Date().toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'});
     renderAll();
   } catch(e) {
-    document.getElementById('journalEntries').innerHTML = `<div class="error-msg">Error loading data: ${e.message}</div>`;
+    document.getElementById('journalEntries').innerHTML = `<div class="error-msg">Error loading: ${e.message}</div>`;
   }
 }
 
-// ── Shift computation ───────────────────────────────────────────
+function parseDateDMY(s) {
+  if (!s || typeof s !== 'string') return null;
+  const parts = s.trim().split(/[\/\-]/);
+  if (parts.length !== 3) return null;
+  // Try DD/MM/YY or DD-MM-YY
+  let dd, mm, yy;
+  if (parts[0].length === 2 && parts[1].length === 2 && parts[2].length === 2) {
+    dd = parseInt(parts[0]); mm = parseInt(parts[1]); yy = parseInt(parts[2]);
+    yy = yy < 50 ? 2000 + yy : 1900 + yy;
+  } else if (parts[0].length === 2 && parts[1].length === 2 && parts[2].length === 4) {
+    dd = parseInt(parts[0]); mm = parseInt(parts[1]); yy = parseInt(parts[2]);
+  } else {
+    return null;
+  }
+  return new Date(yy, mm - 1, dd);
+}
+
 function computeShiftsByDate(rows) {
   const map = {};
   rows.forEach(r => {
-    const d = parseDateDMY(r.Date);
+    const d = parseDateDMY(r.Date || r.date);
     if (!d) return;
     const k = d.toISOString().slice(0, 10);
     if (!map[k]) map[k] = { total: 0, morning: 0, afternoon: 0, night: 0 };
     map[k].total++;
-    const t = r['Start Time'] || '00:00';
+    const t = (r['Start Time'] || r.start_time || '00:00').toString();
     if (t < '12:00') map[k].morning++;
     else if (t < '17:00') map[k].afternoon++;
     else map[k].night++;
@@ -206,99 +189,11 @@ function computeShiftsByDate(rows) {
   return map;
 }
 
-function parseDateDMY(s) {
-  if (!s || typeof s !== 'string') return null;
-  const parts = s.trim().split('/');
-  if (parts.length !== 3) return null;
-  return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
-}
-
-// ── Stats ──────────────────────────────────────────────────────
-function renderStats() {
-  const shifts = computeShiftsByDate(DATA.workDays);
-  const dates = Object.keys(shifts).sort();
-  const last14 = dates.slice(-14);
-  const today = new Date().toISOString().slice(0, 10);
-  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-  const todayHC = shifts[today] || shifts[yesterday] || { total: 0, morning: 0, afternoon: 0, night: 0 };
-  const totalDays = dates.length;
-  const totalEntries = DATA.dailyLog.length;
-
-  // Downtime last 30d
-  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 30);
-  let totalDelayH = 0;
-  DATA.dailyLog.forEach(r => {
-    const d = parseDateDMY(r.Date);
-    if (d && d >= cutoff) totalDelayH += delayHours(r.Delays);
-  });
-
-  document.getElementById('statsRow').innerHTML = `
-    <div class="stat-card"><div class="stat-label">Headcount Today</div><div class="stat-value accent">${todayHC.total}</div><div class="stat-label" style="margin-top:4px">M ${todayHC.morning} · A ${todayHC.afternoon} · N ${todayHC.night}</div></div>
-    <div class="stat-card"><div class="stat-label">Work Days on Site</div><div class="stat-value">${totalDays}</div></div>
-    <div class="stat-card"><div class="stat-label">Journal Entries</div><div class="stat-value">${totalEntries}</div></div>
-    <div class="stat-card"><div class="stat-label">Downtime (30d)</div><div class="stat-value red">${totalDelayH}h</div></div>
-  `;
-}
-
-// ── Charts ──────────────────────────────────────────────────────
-function renderCharts() {
-  Object.values(charts).forEach(c => { try { c.destroy(); } catch(e) {} });
-  charts = {};
-  const shifts = computeShiftsByDate(DATA.workDays);
-  const dates = Object.keys(shifts).sort().slice(-14);
-  const mArr = dates.map(d => shifts[d]?.morning || 0);
-  const aArr = dates.map(d => shifts[d]?.afternoon || 0);
-  const nArr = dates.map(d => shifts[d]?.night || 0);
-  const labels = dates.map(d => {
-    const dt = new Date(d);
-    return dt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
-  });
-
-  const COLORS = ['#38bdf8','#facc15','#c084fc'];
-  charts.hc = new Chart(document.getElementById('chartHC'), {
-    type: 'bar',
-    data: { labels, datasets: [
-      { label: 'Morning', data: mArr, backgroundColor: COLORS[0] },
-      { label: 'Afternoon', data: aArr, backgroundColor: COLORS[1] },
-      { label: 'Night', data: nArr, backgroundColor: COLORS[2] }
-    ]},
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } }, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } } }
-  });
-
-  // Downtime chart
-  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 30);
-  const byCause = {};
-  DATA.dailyLog.forEach(r => {
-    const d = parseDateDMY(r.Date);
-    if (!d || d < cutoff) return;
-    const h = delayHours(r.Delays);
-    if (h > 0) {
-      const cause = delayCause(r.Delays) || 'Other';
-      byCause[cause] = (byCause[cause] || 0) + h;
-    }
-  });
-  const sorted = Object.entries(byCause).sort((a, b) => b[1] - a[1]).slice(0, 10);
-  if (sorted.length > 0) {
-    const delayColors = ['#f87171','#fb923c','#facc15','#4ade80','#38bdf8','#c084fc'];
-    charts.delay = new Chart(document.getElementById('chartDelay'), {
-      type: 'bar',
-      data: {
-        labels: sorted.map(([c]) => c.length > 30 ? c.slice(0, 30) + '…' : c),
-        datasets: [{ data: sorted.map(([, h]) => h), backgroundColor: sorted.map((_, i) => delayColors[i % delayColors.length]) }]
-      },
-      options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, title: { display: true, text: 'Hours', color: '#64748b', font: { size: 11 } } } } } }
-    });
-  }
-}
-
-// ── Journal ─────────────────────────────────────────────────────
 function delayHours(text) {
   if (!text) return 0;
   let h = 0;
   const m = String(text).match(/(\d+(?:\.\d+)?)\s*h(?!ou)/gi);
   if (m) h += m.reduce((s, x) => s + parseFloat(x), 0);
-  const mm = String(text).match(/(\d+)\s*m(?!ou)/gi);
-  if (mm) h += mm.reduce((s, x) => s + parseFloat(x) / 60, 0);
   return Math.round(h * 10) / 10;
 }
 
@@ -311,6 +206,72 @@ function esc(s) {
   return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+function renderStats() {
+  const shifts = computeShiftsByDate(DATA.workDays);
+  const dates = Object.keys(shifts).sort();
+  const last14 = dates.slice(-14);
+  const today = new Date().toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const todayHC = shifts[today] || shifts[yesterday] || { total: 0, morning: 0, afternoon: 0, night: 0 };
+  const totalDays = dates.length;
+  const totalEntries = DATA.dailyLog.length;
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 30);
+  let totalDelayH = 0;
+  DATA.dailyLog.forEach(r => {
+    const d = parseDateDMY(r.Date || r.date);
+    if (d && d >= cutoff) totalDelayH += delayHours(r.Delays || r.delays);
+  });
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Headcount Today</div><div class="stat-value accent">${todayHC.total}</div><div class="stat-label" style="margin-top:4px">M ${todayHC.morning} · A ${todayHC.afternoon} · N ${todayHC.night}</div></div>
+    <div class="stat-card"><div class="stat-label">Work Days on Site</div><div class="stat-value">${totalDays}</div></div>
+    <div class="stat-card"><div class="stat-label">Journal Entries</div><div class="stat-value">${totalEntries}</div></div>
+    <div class="stat-card"><div class="stat-label">Downtime (30d)</div><div class="stat-value red">${totalDelayH}h</div></div>
+  `;
+}
+
+function renderCharts() {
+  Object.values(charts).forEach(c => { try { c.destroy(); } catch(e) {} });
+  charts = {};
+  const shifts = computeShiftsByDate(DATA.workDays);
+  const dates = Object.keys(shifts).sort().slice(-14);
+  const labels = dates.map(d => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }));
+  const mArr = dates.map(d => shifts[d]?.morning || 0);
+  const aArr = dates.map(d => shifts[d]?.afternoon || 0);
+  const nArr = dates.map(d => shifts[d]?.night || 0);
+
+  charts.hc = new Chart(document.getElementById('chartHC'), {
+    type: 'bar',
+    data: { labels, datasets: [
+      { label: 'Morning', data: mArr, backgroundColor: '#38bdf8' },
+      { label: 'Afternoon', data: aArr, backgroundColor: '#facc15' },
+      { label: 'Night', data: nArr, backgroundColor: '#c084fc' }
+    ]},
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } }, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } } }
+  });
+
+  // Downtime chart
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 30);
+  const byCause = {};
+  DATA.dailyLog.forEach(r => {
+    const d = parseDateDMY(r.Date || r.date);
+    if (!d || d < cutoff) return;
+    const h = delayHours(r.Delays || r.delays);
+    if (h > 0) {
+      const cause = delayCause(r.Delays || r.delays) || 'Other';
+      byCause[cause] = (byCause[cause] || 0) + h;
+    }
+  });
+  const sorted = Object.entries(byCause).sort((a, b) => b[1] - a[1]).slice(0, 10);
+  if (sorted.length > 0) {
+    const delayColors = ['#f87171','#fb923c','#facc15','#4ade80','#38bdf8','#c084fc'];
+    charts.delay = new Chart(document.getElementById('chartDelay'), {
+      type: 'bar',
+      data: { labels: sorted.map(([c]) => c.length > 30 ? c.slice(0, 30) + '…' : c), datasets: [{ data: sorted.map(([, h]) => h), backgroundColor: sorted.map((_, i) => delayColors[i % delayColors.length]) }] },
+      options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, title: { display: true, text: 'Hours', color: '#64748b', font: { size: 11 } } } } }
+    });
+  }
+}
+
 function renderAll() {
   renderStats();
   renderCharts();
@@ -319,18 +280,18 @@ function renderAll() {
   renderProgress();
 }
 
+let currentJournalMonth = 'all';
+
 function renderJournal(monthKey = 'all') {
-  // Month filter pills
   const months = {};
   DATA.dailyLog.forEach(r => {
-    const d = parseDateDMY(r.Date);
+    const d = parseDateDMY(r.Date || r.date);
     if (!d) return;
     const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
     if (!months[k]) months[k] = d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
   });
   const monthKeys = Object.keys(months).sort().reverse();
-  const firstMonth = monthKeys[0];
-  const current = monthKey === 'all' ? firstMonth : monthKey;
+  const current = monthKey === 'all' ? monthKeys[0] : monthKey;
 
   const filterEl = document.getElementById('monthFilter');
   filterEl.innerHTML = `<span class="filter-label">Month:</span>` +
@@ -340,7 +301,7 @@ function renderJournal(monthKey = 'all') {
   const filtered = monthKey === 'all'
     ? DATA.dailyLog
     : DATA.dailyLog.filter(r => {
-        const d = parseDateDMY(r.Date);
+        const d = parseDateDMY(r.Date || r.date);
         if (!d) return false;
         const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
         return k === current;
@@ -348,7 +309,7 @@ function renderJournal(monthKey = 'all') {
 
   const byMonth = {};
   filtered.forEach(r => {
-    const d = parseDateDMY(r.Date);
+    const d = parseDateDMY(r.Date || r.date);
     if (!d) return;
     const mk = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
     const ml = d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
@@ -360,22 +321,19 @@ function renderJournal(monthKey = 'all') {
   if (!Object.keys(byMonth).length) { container.innerHTML = '<div class="loading">No entries found.</div>'; return; }
 
   const shifts = computeShiftsByDate(DATA.workDays);
-
   let html = '';
   Object.entries(byMonth).sort((a, b) => b[0].localeCompare(a[0])).forEach(([mk, { label, entries }]) => {
-    html += `<div class="month-group">
-      <div class="month-label">${label} <span class="month-count">${entries.length} entries</span></div>`;
+    html += `<div class="month-group"><div class="month-label">${label} <span class="month-count">${entries.length} entries</span></div>`;
     entries.forEach(r => {
       const dk = r._d.toISOString().slice(0, 10);
       const sh = shifts[dk] || { total: 0, morning: 0, afternoon: 0, night: 0 };
-      const dh = delayHours(r.Delays);
-      const acts = (r.Activities || '').split(',').map(s => s.trim()).filter(Boolean);
-      const hse = (r['HSE Activities'] || '').trim();
-      const notes = (r.Notes || '').trim();
-      const section = (r['Section / System'] || '').trim();
-      const weather = (r['Weather Condition'] || '').trim();
-      const temp = (r['Temperature °C'] || '').trim();
-      const editor = (r.Editor || '').trim();
+      const dh = delayHours(r.Delays || r.delays);
+      const section = (r['Section / System'] || r.section || '').trim();
+      const acts = (r.Activities || r.activities || '').split(',').map(s => s.trim()).filter(Boolean);
+      const hse = (r['HSE Activities'] || r.hse_activities || '').trim();
+      const notes = (r.Notes || r.notes || '').trim();
+      const delays = (r.Delays || r.delays || '').trim();
+      const editor = (r.Editor || r.editor || '').trim();
       const dotColor = section.includes('Dematic') ? '#38bdf8' : section.includes('TGW') ? '#facc15' : '#64748b';
 
       html += `<div class="day-entry">
@@ -393,27 +351,18 @@ function renderJournal(monthKey = 'all') {
             ${section ? `<div class="prop"><span class="dot" style="width:5px;height:5px;border-radius:50%;background:${dotColor};flex-shrink:0;display:inline-block;margin-right:4px"></span><span class="prop-value" style="font-size:11px;color:var(--muted)">${esc(section)}</span></div>` : ''}
           </div>
         </div>
-
         ${acts.length > 0 ? `<div class="section"><div class="section-label"><div class="dot" style="background:#38bdf8"></div>Activities</div><div class="section-content">${acts.map(a => `<span class="activity-item">${esc(a)}</span>`).join('')}</div></div>` : ''}
-
-        ${dh > 0 && r.Delays ? `<div class="section"><div class="section-label"><div class="dot" style="background:#f87171"></div>Delays</div><div class="section-content">${esc(r.Delays)}</div></div>` : ''}
-
+        ${dh > 0 && delays ? `<div class="section"><div class="section-label"><div class="dot" style="background:#f87171"></div>Delays</div><div class="section-content">${esc(delays)}</div></div>` : ''}
         ${hse ? `<div class="section"><div class="section-label"><div class="dot" style="background:#4ade80"></div>HSE</div><div class="section-content">${esc(hse)}</div></div>` : ''}
-
         ${notes ? `<div class="section"><div class="section-label"><div class="dot" style="background:#facc15"></div>Notes</div><div class="section-content">${esc(notes)}</div></div>` : ''}
-
-        ${weather || temp ? `<div class="section"><div class="section-label"><div class="dot" style="background:#94a3b8"></div>Weather</div><div class="section-content">${esc(weather)}${temp ? ` <span style="color:var(--muted)">· Temp: ${esc(temp)}°C</span>` : ''}</div></div>` : ''}
-
         ${editor ? `<div class="entry-footer">Logged by ${esc(editor)}</div>` : ''}
       </div>`;
     });
     html += '</div>';
   });
-
   container.innerHTML = html;
 }
 
-let currentJournalMonth = 'all';
 function setJournalMonth(key, el) {
   document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
   el.classList.add('active');
@@ -421,7 +370,6 @@ function setJournalMonth(key, el) {
   renderJournal(key);
 }
 
-// ── Team ────────────────────────────────────────────────────────
 const DEPT_ORDER = ['Site Management','Commissioning','Mechanical','Electrical','Quality / HSE','Project Management','Engineering','Directors','Other'];
 const DEPT_QUALS = {
   'Site Management': ['Site Manager','Onsite Manager'],
@@ -443,7 +391,6 @@ function getDept(q) {
 }
 
 function renderTeam() {
-  // Deduplicate by name
   const seen = new Set();
   const rows = DATA.team.filter(r => {
     const key = `${r['First Name'] || ''}${r['Last Name'] || ''}`.trim();
@@ -451,57 +398,53 @@ function renderTeam() {
     seen.add(key);
     return true;
   });
-
   const byDept = {};
   rows.forEach(r => {
-    const dept = getDept(r.Qualification);
+    const dept = getDept(r.Qualification || r.qualification);
     if (!byDept[dept]) byDept[dept] = [];
     byDept[dept].push(r);
   });
-
   const ordered = [...DEPT_ORDER.filter(d => byDept[d]), ...Object.keys(byDept).filter(d => !DEPT_ORDER.includes(d))];
   let html = '';
   ordered.forEach(dept => {
-    const people = byDept[dept].sort((a, b) => `${a['Last Name'] || ''}`.localeCompare(`${b['Last Name'] || ''}`));
-    html += `<div class="team-dept">
-      <div class="dept-header">${dept} <span class="dept-count">${people.length}</span></div>`;
+    const people = byDept[dept].sort((a, b) => `${a['Last Name']||''}`.localeCompare(`${b['Last Name']||''}`));
+    html += `<div class="team-dept"><div class="dept-header">${dept} <span class="dept-count">${people.length}</span></div>`;
     people.forEach(p => {
       const name = `${p['First Name'] || ''} ${p['Last Name'] || ''}`.trim();
-      html += `<div class="person-row">
-        <div class="person-name">${esc(name)}</div>
-        <div class="person-qual">${esc(p.Qualification || '')}</div>
-        <div class="person-company">${esc(p.Company || '')}</div>
-      </div>`;
+      html += `<div class="person-row"><div class="person-name">${esc(name)}</div><div class="person-qual">${esc(p.Qualification || '')}</div><div class="person-company">${esc(p.Company || '')}</div></div>`;
     });
     html += '</div>';
   });
-  document.getElementById('teamContent').innerHTML = html || '<div class="loading">No team data found.</div>';
+  document.getElementById('teamContent').innerHTML = html || '<div class="loading">No team data.</div>';
 }
 
-// ── Progress ─────────────────────────────────────────────────────
 function renderProgress() {
-  const items = DATA.siteProgress.filter(r => r.Description);
+  const items = DATA.siteProgress.filter(r => r.Description || r.description);
   let html = '<div class="month-label" style="margin-bottom:16px">Site Progress</div>';
   if (!items.length) { document.getElementById('progressContent').innerHTML = '<div class="loading">No data.</div>'; return; }
-
   html += '<div style="display:grid;gap:10px">';
   items.forEach(r => {
-    const progress = parseInt(r.Progress || 0);
+    const progress = parseInt(r.Progress || r.progress || 0);
     const barColor = progress >= 80 ? '#16A34A' : progress >= 40 ? '#CA8A04' : '#DC2626';
+    const section = r.Section || r.section || '';
+    const assigned = r['Assigned To'] || r.assigned_to || '';
+    const plannedStart = r['Planned Start'] || r.planned_start || '';
+    const plannedFinish = r['Planned Finish'] || r.planned_finish || '';
+    const delay = r['Expected Delay'] || r.expected_delay || '';
     html += `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
-        <div style="font-size:13px;font-weight:500;flex:1">${esc(r.Description || '')}</div>
+        <div style="font-size:13px;font-weight:500;flex:1">${esc(r.Description || r.description || '')}</div>
         <div style="font-size:13px;font-weight:700;color:${barColor};min-width:40px;text-align:right">${progress}%</div>
       </div>
       <div style="background:var(--bg3);border-radius:4px;height:6px;overflow:hidden">
         <div style="width:${progress}%;background:${barColor};height:100%;border-radius:4px;transition:width 0.3s"></div>
       </div>
       <div style="display:flex;gap:16px;margin-top:8px;font-size:11px;color:var(--muted)">
-        ${r['Section'] ? `<span>${esc(r['Section'])}</span>` : ''}
-        ${r['Assigned To'] ? `<span>→ ${esc(r['Assigned To'])}</span>` : ''}
-        ${r['Planned Start'] ? `<span>Start: ${esc(r['Planned Start'])}</span>` : ''}
-        ${r['Planned Finish'] ? `<span>Finish: ${esc(r['Planned Finish'])}</span>` : ''}
-        ${r['Expected Delay'] && r['Expected Delay'] !== '0 days' ? `<span style="color:var(--red)">⚠ ${esc(r['Expected Delay'])}</span>` : ''}
+        ${section ? `<span>${esc(section)}</span>` : ''}
+        ${assigned ? `<span>→ ${esc(assigned)}</span>` : ''}
+        ${plannedStart ? `<span>Start: ${esc(plannedStart)}</span>` : ''}
+        ${plannedFinish ? `<span>Finish: ${esc(plannedFinish)}</span>` : ''}
+        ${delay && delay !== '0 days' ? `<span style="color:var(--red)">⚠ ${esc(delay)}</span>` : ''}
       </div>
     </div>`;
   });
@@ -509,7 +452,6 @@ function renderProgress() {
   document.getElementById('progressContent').innerHTML = html;
 }
 
-// ── Navigation ──────────────────────────────────────────────────
 function showView(name) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
