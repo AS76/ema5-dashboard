@@ -146,10 +146,10 @@ async function fetchJSON(path) {
 async function loadAll() {
   try {
     const [dl, wd, sp, tm] = await Promise.all([
-      fetchJSON(GH_BASE + '/daily_log.json?' + 'cb=' + Date.now()),
-      fetchJSON(GH_BASE + '/work_days.json?' + 'cb=' + Date.now()),
-      fetchJSON(GH_BASE + '/site_progress.json?' + 'cb=' + Date.now()),
-      fetchJSON(GH_BASE + '/work_days.json?' + 'cb=' + Date.now()) // team from work_days
+      fetchJSON(GH_BASE + '/daily_log.json'),
+      fetchJSON(GH_BASE + '/work_days.json'),
+      fetchJSON(GH_BASE + '/site_progress.json'),
+      fetchJSON(GH_BASE + '/work_days.json') // team from work_days
     ]);
     DATA.dailyLog = dl;
     DATA.workDays = wd;
