@@ -80,7 +80,7 @@
 
     /* ── Journal ── */
     .journal-page { display: none; }
-    .journal-page.active { display: block; }
+    .journal-page.active { display: block; width: 100%; }
     .journal-header { margin-bottom: 28px; }
     .journal-date { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; }
     .journal-day-num { font-size: 56px; font-weight: 300; color: var(--accent); line-height: 1; opacity: 0.5; }
@@ -92,7 +92,7 @@
     .pill.active { background: var(--accent); border-color: var(--accent); color: white; font-weight: 600; }
 
     /* Bullet Journal Entry */
-    .bj-month { margin-bottom: 40px; }
+    .bj-month { margin-bottom: 40px; max-width: 900px; margin-left: auto; margin-right: auto; }
     .bj-month-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); padding-bottom: 10px; border-bottom: 2px solid var(--border); margin-bottom: 16px; display: flex; justify-content: space-between; }
     .bj-month-count { font-weight: 400; letter-spacing: 0; text-transform: none; font-size: 10px; }
 
@@ -103,7 +103,7 @@
     .bj-date-num { font-size: 28px; font-weight: 300; color: var(--accent); line-height: 1; opacity: 0.7; }
     .bj-date-dow { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); }
     .bj-meta { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; align-items: flex-start; padding-top: 4px; }
-    .bj-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 500; border: 1px solid transparent; }
+    .bj-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 500; border: 1px solid transparent; word-wrap: break-word; overflow-wrap: break-word; max-width: 100%; }
     .bj-badge.hc { background: var(--green-light); color: var(--green); border-color: rgba(22,163,74,0.2); }
     .bj-badge.hc-warn { background: var(--yellow-light); color: var(--yellow); border-color: rgba(202,138,4,0.2); }
     .bj-badge.delay { background: var(--red-light); color: var(--red); border-color: rgba(220,38,38,0.2); }
@@ -114,7 +114,7 @@
     .bj-badge.open { background: var(--yellow-light); color: var(--yellow); border-color: rgba(202,138,4,0.2); }
     .bj-badge.visitors { background: var(--purple-light); color: var(--purple); border-color: rgba(124,58,237,0.2); }
 
-    .bj-sections { padding-left: 64px; }
+    .bj-sections { }
     .bj-section { margin-bottom: 10px; }
     .bj-section:last-child { margin-bottom: 0; }
     .bj-section-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; display: flex; align-items: center; gap: 6px; }
@@ -125,16 +125,16 @@
     .bj-section-label.dot-yellow { background: var(--yellow); }
     .bj-section-label.dot-purple { background: var(--purple); }
     .bj-section-label.dot-stone { background: var(--stone); }
-    .bj-section-content { font-size: 13px; line-height: 1.6; padding-left: 14px; }
-    .bj-section-content .bj-bullet { display: inline; }
-    .bj-section-content .bj-bullet::after { content: ' · '; color: var(--muted); opacity: 0.5; }
+    .bj-section-content { font-size: 13px; line-height: 1.6; padding-left: 14px; word-wrap: break-word; overflow-wrap: break-word; max-width: 100%; }
+    .bj-section-content .bj-bullet { display: inline; word-wrap: break-word; overflow-wrap: break-word; }
+    .bj-section-content .bj-bullet::after { content: ' \b7 '; color: var(--muted); opacity: 0.5; }
     .bj-section-content .bj-bullet:last-child::after { content: ''; }
     .bj-section-content .bj-highlight { background: var(--yellow-light); padding: 0 3px; border-radius: 3px; }
     .bj-section-content .bj-highlight-red { background: var(--red-light); padding: 0 3px; border-radius: 3px; }
-    .bj-delays { background: var(--red-light); border-left: 3px solid var(--red); padding: 8px 12px; border-radius: 0 6px 6px 0; font-size: 13px; color: var(--red); margin-top: 8px; }
+    .bj-delays { background: var(--red-light); border-left: 3px solid var(--red); padding: 8px 12px; border-radius: 0 6px 6px 0; font-size: 13px; color: var(--red); margin-top: 8px; word-wrap: break-word; overflow-wrap: break-word; max-width: 100%; }
     .bj-delays.none { background: var(--green-light); border-color: var(--green); color: var(--green); }
-    .bj-notes { font-size: 12px; color: var(--muted); font-style: italic; padding-left: 14px; margin-top: 4px; }
-    .bj-footer { font-size: 11px; color: var(--muted); padding-left: 64px; margin-top: 6px; }
+    .bj-notes { font-size: 12px; color: var(--muted); font-style: italic; padding-left: 14px; margin-top: 4px; word-wrap: break-word; overflow-wrap: break-word; }
+    .bj-footer { font-size: 11px; color: var(--muted); margin-top: 6px; padding-left: 62px; }
 
     /* ── Views ── */
     .view { display: none; }
@@ -167,8 +167,29 @@
       .kpi-grid { grid-template-columns: repeat(2, 1fr); }
       .charts-grid-2, .charts-grid-3 { grid-template-columns: 1fr; }
       .content { padding: 16px 16px 60px; }
+
+      /* Journal — mobile: stacked date + content */
+      .journal-page { padding: 16px 16px 60px; }
+      .bj-month { max-width: 100%; padding: 0; }
+      .bj-day-header { flex-direction: column; gap: 8px; }
+      .bj-date { width: auto; text-align: left; display: flex; align-items: center; gap: 8px; }
+      .bj-date-num { font-size: 22px; }
+      .bj-date-dow { font-size: 10px; }
       .bj-sections { padding-left: 0; }
-      .bj-footer { padding-left: 0; }
+      .bj-section-content { padding-left: 12px; }
+      .bj-footer { padding-left: 0; margin-top: 6px; }
+      .bj-notes { padding-left: 0; }
+    }
+
+    @media (min-width: 769px) {
+      /* Journal — desktop: full-width up to 900px, date left of content */
+      .journal-page { padding: 24px 24px 80px; }
+      .bj-day-header { align-items: flex-start; }
+      .bj-date { flex-shrink: 0; }
+      .bj-meta { flex: 1; }
+      .bj-sections { padding-left: 62px; }
+      .bj-footer { padding-left: 62px; }
+      .bj-notes { padding-left: 12px; }
     }
   </style>
 </head>
