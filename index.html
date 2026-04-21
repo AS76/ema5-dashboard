@@ -12,13 +12,11 @@
       --bg: #0f172a; --surface: #1e293b; --surface2: #2d3a4f;
       --border: #334155; --text: #f1f5f9; --text2: #94a3b8;
       --accent: #3b82f6; --green: #22c55e; --yellow: #eab308;
-      --red: #ef4444; --purple: #a855f7; --orange: #f97316;
-      --teal: #14b8a6;
+      --red: #ef4444; --purple: #a855f7; --orange: #f97316; --teal: #14b8a6;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
-    /* ── Layout ── */
     .layout { display: flex; min-height: 100vh; }
     .sidebar { width: 220px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; z-index: 100; }
     .sidebar-header { padding: 20px 16px 16px; border-bottom: 1px solid var(--border); }
@@ -31,7 +29,6 @@
     .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
     .sidebar-footer { padding: 12px 16px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text2); }
 
-    /* ── Main ── */
     .main { flex: 1; margin-left: 220px; padding: 24px; }
     .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
     .topbar h1 { font-size: 22px; font-weight: 700; }
@@ -41,12 +38,10 @@
     .btn-primary { background: var(--accent); color: #fff; }
     .btn:hover { opacity: 0.85; }
 
-    /* ── Cards ── */
     .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 20px; }
     .card-title { font-size: 13px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
-    .card-title span { font-size: 11px; color: var(--text2); font-weight: 400; text-transform: none; letter-spacing: 0; }
+    .card-title .sub { font-size: 11px; color: var(--text2); font-weight: 400; text-transform: none; letter-spacing: 0; }
 
-    /* ── Stats ── */
     .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
     .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; }
     .stat-value { font-size: 28px; font-weight: 700; }
@@ -56,12 +51,10 @@
     .stat-yellow { color: var(--yellow); }
     .stat-red { color: var(--red); }
 
-    /* ── Charts ── */
     .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
     .chart-wrap { position: relative; height: 260px; }
     .chart-wide { grid-column: 1 / -1; }
 
-    /* ── Tables ── */
     .table-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
     th { text-align: left; padding: 10px 12px; color: var(--text2); font-weight: 600; border-bottom: 1px solid var(--border); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
@@ -69,21 +62,28 @@
     tr:hover td { background: rgba(255,255,255,0.03); }
     .mono { font-family: 'Courier New', monospace; font-size: 12px; }
 
-    /* ── Page sections ── */
     .page { display: none; }
     .page.active { display: block; }
 
-    /* ── Gantt ── */
-    .gantt-section { margin-bottom: 28px; }
-    .gantt-month { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
-    .gantt-row { display: flex; align-items: center; margin-bottom: 4px; min-height: 28px; }
-    .gantt-date { width: 80px; font-size: 11px; color: var(--text2); flex-shrink: 0; padding-right: 8px; }
-    .gantt-bar { height: 22px; border-radius: 4px; font-size: 11px; color: #fff; display: flex; align-items: center; padding: 0 8px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: calc(100% - 180px); cursor: default; }
-    .gantt-empty { width: 8px; }
-    .gantt-delay { width: 80px; flex-shrink: 0; font-size: 11px; padding-left: 8px; }
-    .gantt-delay.has-delay { color: var(--red); font-weight: 600; }
-    .gantt-tooltip { position: relative; }
-    .gantt-tooltip:hover::after { content: attr(data-tip); position: absolute; left: 0; top: -4px; transform: translateY(-100%); background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; font-size: 11px; color: var(--text); white-space: pre-wrap; max-width: 320px; z-index: 10; pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+    /* ── Daily Log table ── */
+    .dl-header { display: grid; grid-template-columns: 90px 70px 60px 70px 1fr; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 4px; }
+    .dl-header-cell { padding: 6px 10px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text2); font-weight: 600; }
+    .dl-row { display: grid; grid-template-columns: 90px 70px 60px 70px 1fr; gap: 0; align-items: start; border-bottom: 1px solid var(--surface2); }
+    .dl-row:hover { background: rgba(255,255,255,0.03); }
+    .dl-cell { padding: 8px 10px; }
+    .dl-date { display: flex; flex-direction: column; justify-content: center; font-size: 11px; color: var(--text2); }
+    .dl-date .dl-weekday { font-size: 10px; text-transform: uppercase; opacity: 0.6; }
+    .dl-date .dl-day { font-size: 14px; font-weight: 600; color: var(--text); }
+    .dl-counts { display: flex; flex-direction: column; justify-content: center; gap: 2px; font-size: 12px; }
+    .dl-counts .total { font-size: 16px; font-weight: 700; color: var(--accent); }
+    .dl-counts .shifts { font-size: 10px; color: var(--text2); }
+    .dl-section { display: flex; align-items: center; gap: 6px; padding: 8px 10px; border-right: 1px solid var(--surface2); }
+    .dl-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .dl-section-name { font-size: 11px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px; }
+    .dl-activities { display: flex; flex-direction: column; justify-content: center; gap: 3px; padding: 8px 10px; }
+    .dl-act { font-size: 12px; color: var(--text); line-height: 1.4; }
+    .dl-act.empty { color: var(--text2); font-style: italic; }
+    .dl-month-sep { padding: 12px 10px 6px; font-size: 13px; font-weight: 700; border-bottom: 1px solid var(--border); color: var(--text); grid-column: 1 / -1; margin-top: 8px; }
 
     /* ── Filter tabs ── */
     .filter-tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
@@ -91,12 +91,6 @@
     .tab:hover { border-color: var(--accent); color: var(--accent); }
     .tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
 
-    /* ── Loading ── */
-    .loading { text-align: center; padding: 40px; color: var(--text2); }
-    .loading-spinner { width: 32px; height: 32px; border: 3px solid var(--surface2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* ── Mobile ── */
     @media (max-width: 768px) {
       .sidebar { display: none; }
       .main { margin-left: 0; padding: 16px; }
@@ -108,7 +102,6 @@
 <body>
 
 <div class="layout">
-  <!-- Sidebar -->
   <aside class="sidebar">
     <div class="sidebar-header">
       <div class="sidebar-logo">EMA5</div>
@@ -135,7 +128,6 @@
     <div class="sidebar-footer" id="syncTime">Loading...</div>
   </aside>
 
-  <!-- Main -->
   <main class="main">
     <div class="topbar">
       <h1 id="pageTitle">Overview</h1>
@@ -145,56 +137,48 @@
       </div>
     </div>
 
-    <!-- ── Overview ── -->
+    <!-- Overview -->
     <div class="page active" id="page-overview">
       <div class="stats" id="statsRow"></div>
 
-      <!-- Downtime chart -->
       <div class="card">
-        <div class="card-title">Downtime Hours by Cause <span>(from Issues — last 30 days)</span></div>
+        <div class="card-title">Downtime by Cause <span class="sub">last 30 days — from Issues</span></div>
         <div class="chart-wrap" style="height:220px"><canvas id="chartDowntime"></canvas></div>
       </div>
 
-      <!-- Headcount chart -->
       <div class="charts">
         <div class="chart-wide card">
           <div class="card-title">Headcount — Last 14 Days</div>
           <div class="chart-wrap"><canvas id="chartHeadcount"></canvas></div>
         </div>
         <div class="card">
-          <div class="card-title">Weekly Total Headcount</div>
+          <div class="card-title">Weekly Total</div>
           <div class="chart-wrap"><canvas id="chartWeekly"></canvas></div>
         </div>
         <div class="card">
-          <div class="card-title">Qualifications Distribution</div>
+          <div class="card-title">Qualifications</div>
           <div class="chart-wrap"><canvas id="chartQualifications"></canvas></div>
         </div>
       </div>
 
-      <!-- Recent entries -->
       <div class="card">
-        <div class="card-title">Recent Daily Log Entries</div>
+        <div class="card-title">Recent Entries</div>
         <div class="table-wrap">
-          <table id="tableRecent">
+          <table>
             <thead><tr><th>Date</th><th>Day</th><th>Total</th><th>M</th><th>A</th><th>N</th><th>Companies</th><th>Qualifications</th></tr></thead>
-            <tbody></tbody>
+            <tbody id="tableRecent"></tbody>
           </table>
         </div>
       </div>
     </div>
 
-    <!-- ── Daily Log ── -->
+    <!-- Daily Log -->
     <div class="page" id="page-daily-log">
-      <!-- Filter tabs -->
       <div class="filter-tabs" id="monthTabs"></div>
-
-      <!-- Gantt timeline -->
-      <div id="ganttContainer">
-        <div class="loading"><div class="loading-spinner"></div>Loading activities...</div>
-      </div>
+      <div id="dlContainer"><div style="padding:40px;text-align:center;color:var(--text2)">Loading...</div></div>
     </div>
 
-    <!-- ── Analytics ── -->
+    <!-- Analytics -->
     <div class="page" id="page-analytics">
       <div class="charts">
         <div class="chart-wide card">
@@ -212,10 +196,10 @@
       </div>
     </div>
 
-    <!-- ── Team ── -->
+    <!-- Team -->
     <div class="page" id="page-team">
       <div class="card">
-        <div class="card-title">Team — All Members <span id="teamCount"></span></div>
+        <div class="card-title">Team <span class="sub" id="teamCount"></span></div>
         <div class="table-wrap">
           <table>
             <thead><tr><th>Name</th><th>Emp. No</th><th>Qualification</th><th>Company</th><th>Supervisor</th><th>Last Seen</th></tr></thead>
@@ -228,13 +212,10 @@
 </div>
 
 <script>
-// ── Config ──────────────────────────────────────────────
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxGtL_0WUsZXjhorA6WhCI2zzv6JqP9kDmtK4q7CExt5Z4v7nyqJDcMtTyg8Nq9UYr76g/exec';
-
 const DATA = { dailyLog: [], team: [], issues: [], loaded: false };
 let charts = {};
 
-// ── Fetch from GAS ───────────────────────────────────────
 async function fetchSheet(sheet) {
   const res = await fetch(`${GAS_URL}?sheet=${encodeURIComponent(sheet)}`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -252,38 +233,27 @@ function parseRows(raw) {
   });
 }
 
-// ── Parse downtime hours from free text ─────────────────
 function parseDelayHours(text) {
-  if (!text || text === '-' || text === '' || text === '0') return 0;
-  const str = String(text);
+  if (!text || text === '-' || text === '') return 0;
   let hours = 0;
-  // "3h", "3 h", "3hours"
-  const hMatches = str.match(/(\d+(?:\.\d+)?)\s*h(?!ou)/gi);
+  const hMatches = String(text).match(/(\d+(?:\.\d+)?)\s*h(?!ou)/gi);
   if (hMatches) hours += hMatches.reduce((s, m) => s + parseFloat(m), 0);
-  // "1 hour", "2 hours"
-  const hourMatches = str.match(/(\d+(?:\.\d+)?)\s*hour/gi);
-  if (hourMatches) hours += hourMatches.reduce((s, m) => s + parseFloat(m.match(/\d+/)[0]), 0);
-  // "30m", "30 m", "30min"
-  const mMatches = str.match(/(\d+)\s*m(?!ou)/gi);
+  const mMatches = String(text).match(/(\d+)\s*m(?!ou)/gi);
   if (mMatches) hours += mMatches.reduce((s, m) => s + parseFloat(m) / 60, 0);
   return Math.round(hours * 10) / 10;
 }
 
-// ── Parse delay cause (first sentence or first 60 chars) ─
 function parseDelayCause(text) {
-  if (!text || text === '-' || text === '' || text === '0') return '';
+  if (!text || text === '-' || text === '') return '';
   const str = String(text).trim();
   const first = str.split('.')[0].trim();
-  return first.length > 60 ? first.slice(0, 60) + '…' : first;
+  return first.length > 60 ? first.slice(0, 60) + '\u2026' : first;
 }
 
-// ── Load all data ────────────────────────────────────────
 async function loadAll() {
   try {
     const [dlRaw, teamRaw, issuesRaw] = await Promise.all([
-      fetchSheet('Daily Log'),
-      fetchSheet('Team'),
-      fetchSheet('Issues')
+      fetchSheet('Daily Log'), fetchSheet('Team'), fetchSheet('Issues')
     ]);
     DATA.dailyLog = parseRows(dlRaw);
     DATA.team = parseRows(teamRaw);
@@ -293,15 +263,10 @@ async function loadAll() {
     const now = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
     document.getElementById('lastSync').textContent = `Synced ${now}`;
     document.getElementById('syncTime').textContent = `Synced ${now}`;
-
     renderAll();
-  } catch (e) {
-    console.error(e);
-    alert('Error loading data: ' + e.message);
-  }
+  } catch (e) { alert('Error: ' + e.message); }
 }
 
-// ── Render everything ───────────────────────────────────
 function renderAll() {
   const rows = [...DATA.dailyLog].sort((a, b) => new Date(b.Date) - new Date(a.Date));
   const sorted = [...rows].sort((a, b) => new Date(a.Date) - new Date(b.Date));
@@ -309,38 +274,30 @@ function renderAll() {
 
   renderStats(last7);
   renderRecent(rows.slice(0, 20));
-  renderDailyLog(rows);
+  renderDailyLog();
   renderTeam();
   renderCharts(sorted, last7, rows);
 }
 
-// ── Stats ───────────────────────────────────────────────
 function renderStats(last7) {
   const total7 = last7.reduce((s, r) => s + (Number(r.Total) || 0), 0);
   const avgDaily = last7.length ? Math.round(total7 / last7.length) : 0;
   const latest = DATA.dailyLog[DATA.dailyLog.length - 1] || {};
   const peak = Math.max(...DATA.dailyLog.map(r => Number(r.Total) || 0));
-
-  // Downtime total
   const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 30);
-  const recentIssues = DATA.issues.filter(r => {
-    const d = new Date(r.Date);
-    return d >= cutoff;
-  });
+  const recentIssues = DATA.issues.filter(r => new Date(r.Date) >= cutoff);
   const totalDowntime = recentIssues.reduce((s, r) => s + parseDelayHours(r.Delays), 0);
 
   document.getElementById('statsRow').innerHTML = `
     <div class="stat"><div class="stat-value stat-accent">${avgDaily}</div><div class="stat-label">Avg headcount / day (7d)</div></div>
     <div class="stat"><div class="stat-value stat-green">${DATA.dailyLog.length}</div><div class="stat-label">Total log entries</div></div>
-    <div class="stat"><div class="stat-value">${Number(latest.Total) || 0}</div><div class="stat-label">Latest entry headcount</div></div>
+    <div class="stat"><div class="stat-value">${Number(latest.Total) || 0}</div><div class="stat-label">Latest entry</div></div>
     <div class="stat"><div class="stat-value stat-red">${totalDowntime}h</div><div class="stat-label">Downtime (last 30d)</div></div>
   `;
 }
 
-// ── Recent table ─────────────────────────────────────────
 function renderRecent(rows) {
-  const tbody = document.querySelector('#tableRecent tbody');
-  tbody.innerHTML = rows.map(r => `
+  document.querySelector('#tableRecent').innerHTML = rows.map(r => `
     <tr>
       <td class="mono">${fmtDate(r.Date)}</td>
       <td>${r.Day || ''}</td>
@@ -354,39 +311,10 @@ function renderRecent(rows) {
   `).join('');
 }
 
-// ── Daily Log table + Gantt ──────────────────────────────
-function renderDailyLog(rows) {
-  // Build month filter tabs
-  const months = {};
-  rows.forEach(r => {
-    const d = new Date(r.Date);
-    if (isNaN(d)) return;
-    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-    const label = d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
-    months[key] = label;
-  });
-  const sortedMonths = Object.keys(months).sort().reverse();
-  const latestMonth = sortedMonths[0];
-
-  const tabsEl = document.getElementById('monthTabs');
-  tabsEl.innerHTML = `
-    <div class="tab active" onclick="renderGantt('${latestMonth}', this)">Latest Month</div>
-    ${sortedMonths.slice(1).map((m, i) => `<div class="tab" onclick="renderGantt('${m}', this)">${months[m]}</div>`).join('')}
-    <div class="tab" onclick="renderGantt('all', this)">All</div>
-  `;
-
-  // Initial render: latest month
-  renderGantt(latestMonth, tabsEl.querySelector('.tab'));
-}
-
-function renderGantt(monthKey, tabEl) {
-  // Update active tab
-  document.querySelectorAll('#monthTabs .tab').forEach(t => t.classList.remove('active'));
-  if (tabEl) tabEl.classList.add('active');
-
+function renderDailyLog() {
   const rows = [...DATA.dailyLog].sort((a, b) => new Date(a.Date) - new Date(b.Date));
 
-  // Build Issues index by date
+  // Build Issues index
   const issuesByDate = {};
   DATA.issues.forEach(r => {
     const d = new Date(r.Date);
@@ -395,7 +323,38 @@ function renderGantt(monthKey, tabEl) {
     issuesByDate[key] = r;
   });
 
-  // Filter rows
+  // Month tabs
+  const monthMap = {};
+  rows.forEach(r => {
+    const d = new Date(r.Date);
+    if (isNaN(d)) return;
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    monthMap[key] = d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+  });
+  const sortedMonths = Object.keys(monthMap).sort().reverse();
+  const latestMonth = sortedMonths[0];
+
+  const tabsEl = document.getElementById('monthTabs');
+  tabsEl.innerHTML = `<div class="tab active" onclick="renderDL('${latestMonth}', this)">Latest Month</div>` +
+    sortedMonths.slice(1).map(m => `<div class="tab" onclick="renderDL('${m}', this)">${monthMap[m]}</div>`).join('') +
+    `<div class="tab" onclick="renderDL('all', this)">All</div>`;
+
+  renderDL(latestMonth, tabsEl.querySelector('.tab'));
+}
+
+function renderDL(monthKey, tabEl) {
+  document.querySelectorAll('#monthTabs .tab').forEach(t => t.classList.remove('active'));
+  if (tabEl) tabEl.classList.add('active');
+
+  const rows = [...DATA.dailyLog].sort((a, b) => new Date(a.Date) - new Date(b.Date));
+  const issuesByDate = {};
+  DATA.issues.forEach(r => {
+    const d = new Date(r.Date);
+    if (isNaN(d)) return;
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    issuesByDate[key] = r;
+  });
+
   const filtered = monthKey === 'all' ? rows : rows.filter(r => {
     const d = new Date(r.Date);
     if (isNaN(d)) return false;
@@ -403,83 +362,84 @@ function renderGantt(monthKey, tabEl) {
     return key === monthKey;
   });
 
-  // Group by month label
-  const byMonth = {};
-  filtered.forEach(r => {
-    const d = new Date(r.Date);
-    if (isNaN(d)) return;
-    const mLabel = d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
-    if (!byMonth[mLabel]) byMonth[mLabel] = [];
-    byMonth[mLabel].push(r);
-  });
-
-  // Section colors
   const sectionColors = {
     'DEMATIC XBelt sorter': '#3b82f6',
     'DEMATIC': '#22c55e',
     'TGW': '#f59e0b',
     'Unknown': '#64748b'
   };
-  const getColor = (section) => sectionColors[section] || sectionColors['Unknown'];
 
-  // Render
-  const container = document.getElementById('ganttContainer');
+  const container = document.getElementById('dlContainer');
   if (filtered.length === 0) {
-    container.innerHTML = '<div class="card"><div class="card-title">No data for this period</div></div>';
+    container.innerHTML = '<div class="card"><div class="card-title">No data</div></div>';
     return;
   }
 
-  let html = '';
-  Object.entries(byMonth).forEach(([monthLabel, monthRows]) => {
-    html += `<div class="gantt-section">
-      <div class="gantt-month">${monthLabel}</div>`;
-
-    // Gantt header
-    html += `<div style="display:flex;align-items:center;margin-bottom:6px;padding-left:88px">
-      <div style="flex:1;font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px">Activities</div>
-      <div style="width:80px;font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;padding-left:8px">Delay</div>
-    </div>`;
-
-    monthRows.slice().reverse().forEach(r => {
-      const d = new Date(r.Date);
-      const dateStr = d.toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' });
-      const dateKey = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-      const issue = issuesByDate[dateKey];
-      const activities = issue ? (issue.Activities || '') : (r.Qualifications || '');
-      const delay = issue ? parseDelayHours(issue.Delays) : 0;
-      const delayCause = issue ? parseDelayCause(issue.Delays) : '';
-      const section = issue ? (issue.Section || 'Unknown') : 'Unknown';
-      const barColor = getColor(section);
-
-      // Wrap long activities
-      const actShort = activities.length > 70 ? activities.slice(0, 70) + '…' : (activities || '—');
-      const actTitle = escHtml(activities || '');
-
-      html += `<div class="gantt-row">
-        <div class="gantt-date mono">${dateStr}</div>
-        <div class="gantt-tooltip" data-tip="${actTitle}">
-          <div class="gantt-bar" style="background:${barColor};opacity:${activities ? 1 : 0.3}" title="${actTitle}">${escHtml(actShort)}</div>
-        </div>
-        <div class="gantt-delay ${delay > 0 ? 'has-delay' : ''}">${delay > 0 ? `${delay}h` : '—'}</div>
-      </div>`;
-    });
-
-    html += '</div>';
+  // Group by month
+  const byMonth = {};
+  filtered.forEach(r => {
+    const d = new Date(r.Date);
+    if (isNaN(d)) return;
+    const mLabel = d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+    if (!byMonth[mLabel]) byMonth[mLabel] = [];
+    byMonth[mLabel].push({ ...r, _d: d });
   });
 
+  let html = `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+    <div class="dl-header">
+      <div class="dl-header-cell">Date</div>
+      <div class="dl-header-cell">Headcount</div>
+      <div class="dl-header-cell">Shift</div>
+      <div class="dl-header-cell">Section</div>
+      <div class="dl-header-cell">Activities</div>
+    </div>`;
+
+  Object.entries(byMonth).forEach(([monthLabel, monthRows]) => {
+    html += `<div class="dl-month-sep">${monthLabel}</div>`;
+    monthRows.slice().reverse().forEach(r => {
+      const dateKey = `${r._d.getFullYear()}-${String(r._d.getMonth()+1).padStart(2,'0')}-${String(r._d.getDate()).padStart(2,'0')}`;
+      const issue = issuesByDate[dateKey];
+      const activities = issue ? (issue.Activities || '') : (r.Qualifications || '');
+      const section = issue ? (issue.Section || 'Unknown') : 'Unknown';
+      const dotColor = sectionColors[section] || sectionColors['Unknown'];
+
+      const actParts = activities.split(',').map(s => s.trim()).filter(Boolean);
+
+      html += `<div class="dl-row">
+        <div class="dl-cell dl-date">
+          <span class="dl-weekday">${r._d.toLocaleDateString('en-GB', { weekday: 'short' })}</span>
+          <span class="dl-day">${r._d.getDate()}</span>
+        </div>
+        <div class="dl-cell dl-counts">
+          <span class="total">${r.Total || 0}</span>
+          <span class="shifts">M:${r.Morning||0} A:${r.Afternoon||0} N:${r.Night||0}</span>
+        </div>
+        <div class="dl-cell" style="display:flex;align-items:center">
+          <div class="dl-dot" style="background:${dotColor}"></div>
+          <span class="dl-section-name" title="${escHtml(section)}">${escHtml(section)}</span>
+        </div>
+        <div class="dl-activities">
+          ${actParts.length > 0
+            ? actParts.map(a => `<div class="dl-act">${escHtml(a)}</div>`).join('')
+            : '<div class="dl-act empty">No activities</div>'
+          }
+        </div>
+      </div>`;
+    });
+  });
+
+  html += '</div>';
   container.innerHTML = html;
 }
 
-// ── Team ────────────────────────────────────────────────
 function renderTeam() {
-  const tbody = document.getElementById('tableTeam');
   const rows = [...DATA.team].sort((a, b) => (a.Name || '').localeCompare(b.Name || ''));
   document.getElementById('teamCount').textContent = `— ${rows.length} members`;
-  tbody.innerHTML = rows.map(r => `
+  document.getElementById('tableTeam').innerHTML = rows.map(r => `
     <tr>
       <td><strong>${escHtml(r.Name || '')}</strong></td>
       <td class="mono">${escHtml(r['Employee No'] || '')}</td>
-      <td><span class="badge" style="background:rgba(59,130,246,0.2);color:var(--accent);padding:2px 8px;border-radius:12px;font-size:11px">${escHtml(r.Qualification || '')}</span></td>
+      <td><span style="background:rgba(59,130,246,0.2);color:var(--accent);padding:2px 8px;border-radius:12px;font-size:11px">${escHtml(r.Qualification || '')}</span></td>
       <td>${escHtml(r.Company || '')}</td>
       <td>${escHtml(r.Supervisor || '')}</td>
       <td class="mono" style="color:var(--text2)">${fmtDate(r['Last Seen'] || '')}</td>
@@ -487,22 +447,20 @@ function renderTeam() {
   `).join('');
 }
 
-// ── Charts ───────────────────────────────────────────────
 function renderCharts(sorted, last7, allRows) {
   Object.values(charts).forEach(c => { try { c.destroy(); } catch(e) {} });
   charts = {};
 
   const last14 = sorted.slice(-14);
 
-  // ── Headcount 14 days (stacked bar) ──
-  const labels14 = last14.map(r => {
-    const d = new Date(r.Date);
-    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
-  });
+  // Headcount stacked bar
   charts.hc = new Chart(document.getElementById('chartHeadcount'), {
     type: 'bar',
     data: {
-      labels: labels14,
+      labels: last14.map(r => {
+        const d = new Date(r.Date);
+        return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+      }),
       datasets: [
         { label: 'Morning', data: last14.map(r => Number(r.Morning)||0), backgroundColor: '#3b82f6' },
         { label: 'Afternoon', data: last14.map(r => Number(r.Afternoon)||0), backgroundColor: '#f59e0b' },
@@ -512,11 +470,10 @@ function renderCharts(sorted, last7, allRows) {
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } }
   });
 
-  // ── Qualifications doughnut ──
+  // Qualifications
   const qCounts = {};
   sorted.forEach(r => {
-    const qs = (r.Qualifications || '').split(',');
-    qs.forEach(q => {
+    (r.Qualifications || '').split(',').forEach(q => {
       const m = q.trim().match(/^(.+?):\s*(\d+)$/);
       if (m) qCounts[m[1]] = (qCounts[m[1]] || 0) + Number(m[2]);
     });
@@ -530,7 +487,7 @@ function renderCharts(sorted, last7, allRows) {
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } } }
   });
 
-  // ── Weekly trend ──
+  // Weekly
   const weekly = {};
   sorted.forEach(r => {
     const d = new Date(r.Date);
@@ -540,18 +497,13 @@ function renderCharts(sorted, last7, allRows) {
   const wKeys = Object.keys(weekly).sort();
   charts.weekly = new Chart(document.getElementById('chartWeekly'), {
     type: 'line',
-    data: { labels: wKeys, datasets: [{ label: 'Total Headcount', data: wKeys.map(k => weekly[k]), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.3 }] },
+    data: { labels: wKeys, datasets: [{ label: 'Total', data: wKeys.map(k => weekly[k]), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.3 }] },
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
   });
 
-  // ── Downtime chart (Overview) ──
+  // Downtime by cause
   const cutoff30 = new Date(); cutoff30.setDate(cutoff30.getDate() - 30);
-  const recentIssues = DATA.issues.filter(r => {
-    const d = new Date(r.Date);
-    return d >= cutoff30;
-  });
-
-  // Aggregate downtime by cause
+  const recentIssues = DATA.issues.filter(r => new Date(r.Date) >= cutoff30);
   const downtimeByCause = {};
   recentIssues.forEach(r => {
     const h = parseDelayHours(r.Delays);
@@ -560,26 +512,24 @@ function renderCharts(sorted, last7, allRows) {
       downtimeByCause[cause] = (downtimeByCause[cause] || 0) + h;
     }
   });
-
   const sortedCauses = Object.entries(downtimeByCause).sort((a, b) => b[1] - a[1]);
-  const downtimeLabels = sortedCauses.map(([c]) => c.length > 40 ? c.slice(0, 40) + '…' : c);
-  const downtimeData = sortedCauses.map(([, h]) => h);
-  const downtimeColors = downtimeData.map((_, i) => {
-    const palette = ['#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#a855f7','#06b6d4','#84cc16'];
-    return palette[i % palette.length];
-  });
-
-  if (downtimeLabels.length > 0) {
+  const downtimeColors = ['#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#a855f7','#06b6d4','#84cc16'];
+  if (sortedCauses.length > 0) {
     charts.downtime = new Chart(document.getElementById('chartDowntime'), {
       type: 'bar',
-      data: { labels: downtimeLabels, datasets: [{ label: 'Hours lost', data: downtimeData, backgroundColor: downtimeColors }] },
+      data: {
+        labels: sortedCauses.map(([c]) => c.length > 45 ? c.slice(0, 45) + '\u2026' : c),
+        datasets: [{ label: 'Hours lost', data: sortedCauses.map(([, h]) => h), backgroundColor: sortedCauses.map((_, i) => downtimeColors[i % downtimeColors.length]) }]
+      },
       options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, title: { display: true, text: 'Hours', color: '#94a3b8' } } } }
     });
   } else {
-    document.getElementById('chartDowntime').parentElement.innerHTML += '<div style="text-align:center;padding:20px;color:var(--text2);font-size:13px">No downtime recorded in the last 30 days ✅</div>';
+    document.getElementById('chartDowntime').parentElement.style.cssText += ';display:flex;align-items:center;justify-content:center';
+    document.getElementById('chartDowntime').style.display = 'none';
+    document.getElementById('chartDowntime').parentElement.innerHTML += '<div style="text-align:center;padding:20px;color:var(--green);font-size:14px">No downtime recorded in 30 days \u2705</div>';
   }
 
-  // ── Analytics charts ──
+  // Analytics
   const last30 = sorted.slice(-30);
   charts.d30 = new Chart(document.getElementById('chartDaily30'), {
     type: 'bar',
@@ -596,21 +546,18 @@ function renderCharts(sorted, last7, allRows) {
     },
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } }
   });
-
   charts.quals2 = new Chart(document.getElementById('chartQualsDonut'), {
     type: 'doughnut',
     data: { labels: qLabels, datasets: [{ data: qData, backgroundColor: qColors }] },
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } } }
   });
-
   charts.weekly2 = new Chart(document.getElementById('chartWeekly2'), {
     type: 'line',
-    data: { labels: wKeys, datasets: [{ label: 'Total Headcount', data: wKeys.map(k => weekly[k]), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.3 }] },
+    data: { labels: wKeys, datasets: [{ label: 'Total', data: wKeys.map(k => weekly[k]), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.3 }] },
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
   });
 }
 
-// ── Navigation ───────────────────────────────────────────
 function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById(`page-${name}`).classList.add('active');
@@ -620,7 +567,6 @@ function showPage(name) {
   document.getElementById('pageTitle').textContent = titles[name] || name;
 }
 
-// ── Helpers ──────────────────────────────────────────────
 function fmtDate(v) {
   if (!v) return '';
   const d = new Date(v);
@@ -640,7 +586,6 @@ function getISOWeek(date) {
   return 1 + Math.round(((d - week1) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
 }
 
-// ── Init ─────────────────────────────────────────────────
 loadAll();
 </script>
 </body>
