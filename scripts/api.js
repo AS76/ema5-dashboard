@@ -7,11 +7,9 @@ const API = {
   // The sheet must be shared "Anyone with the link can view"
   SPREADSHEET_ID: '1bQdx9pqtCRec8r8HhS4cyryi6t0S5UNJrv71qA_VlqQ',
 
-  // NOTE: For production use, set up a Google Apps Script as a CORS proxy.
-  // See fetch-sheets-gas.js for deployment instructions.
-  // Then update GAS_URL below to your deployed webapp URL.
-  //
-  // Example GAS URL (replace with your deployed URL):
+  // Google Apps Script proxy (CORS-free, primary)
+  GAS_URL: 'https://script.google.com/macros/s/AKfycbxGtL_0WUsZXjhorA6WhCI2zzv6JqP9kDmtK4q7CExt5Z4v7nyqJDcMtTyg8Nq9UYr76g/exec',
+
   // Local VPS proxy (CORS-friendly) — EMA5 proxy server on Hostinger
   // PROXY_URL: 'https://ema5.asassi.cloud',
 
@@ -68,11 +66,14 @@ const API = {
     try {
       let raw;
 
-      if (this.PROXY_URL) {
-        // Use local VPS proxy (CORS-friendly)
+      if (this.GAS_URL) {
+        // Google Apps Script (CORS-free, primary)
+        raw = await this.fetchViaGas(sheetName);
+      } else if (this.PROXY_URL) {
+        // Local VPS proxy (CORS-friendly)
         raw = await this.fetchViaProxy(sheetName);
       } else {
-        // Use gviz JSON endpoint (no API key required for public sheets)
+        // gviz JSON endpoint (fallback, may have CORS issues)
         raw = await this.fetchViaGviz(sheetName);
       }
 
