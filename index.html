@@ -66,9 +66,9 @@
     .page.active { display: block; }
 
     /* ── Daily Log table ── */
-    .dl-header { display: grid; grid-template-columns: 90px 70px 60px 70px 1fr; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 4px; }
+    .dl-header { display: grid; grid-template-columns: 90px 70px 60px 130px minmax(220px, 1fr); gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 4px; }
     .dl-header-cell { padding: 6px 10px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text2); font-weight: 600; }
-    .dl-row { display: grid; grid-template-columns: 90px 70px 60px 70px 1fr; gap: 0; align-items: start; border-bottom: 1px solid var(--surface2); }
+    .dl-row { display: grid; grid-template-columns: 90px 70px 60px 130px minmax(220px, 1fr); gap: 0; align-items: start; border-bottom: 1px solid var(--surface2); }
     .dl-row:hover { background: rgba(255,255,255,0.03); }
     .dl-cell { padding: 8px 10px; }
     .dl-date { display: flex; flex-direction: column; justify-content: center; font-size: 11px; color: var(--text2); }
@@ -79,7 +79,7 @@
     .dl-counts .shifts { font-size: 10px; color: var(--text2); }
     .dl-section { display: flex; align-items: center; gap: 6px; padding: 8px 10px; border-right: 1px solid var(--surface2); }
     .dl-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-    .dl-section-name { font-size: 11px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px; }
+    .dl-section-name { font-size: 11px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
     .dl-activities { display: flex; flex-direction: column; justify-content: center; gap: 3px; padding: 8px 10px; }
     .dl-act { font-size: 12px; color: var(--text); line-height: 1.4; }
     .dl-act.empty { color: var(--text2); font-style: italic; }
