@@ -3,587 +3,433 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EMA5 Operations</title>
+  <title>EMA5 Operations — Daily Journal</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     :root {
-      --bg: #0f172a; --surface: #1e293b; --surface2: #2d3a4f;
-      --border: #334155; --text: #f1f5f9; --text2: #94a3b8;
-      --accent: #3b82f6; --green: #22c55e; --yellow: #eab308;
-      --red: #ef4444; --purple: #a855f7; --orange: #f97316; --teal: #14b8a6;
+      --bg: #0f172a; --bg2: #1e293b; --bg3: #263548;
+      --border: #1e3a5f; --text: #e2e8f0; --muted: #64748b;
+      --accent: #38bdf8; --green: #4ade80; --yellow: #facc15;
+      --red: #f87171; --purple: #c084fc;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; font-size: 14px; }
 
-    .layout { display: flex; min-height: 100vh; }
-    .sidebar { width: 220px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; z-index: 100; }
-    .sidebar-header { padding: 20px 16px 16px; border-bottom: 1px solid var(--border); }
-    .sidebar-logo { font-size: 18px; font-weight: 700; }
-    .sidebar-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
-    .sidebar nav { flex: 1; padding: 12px 8px; }
-    .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; color: var(--text2); font-size: 14px; font-weight: 500; transition: all 0.15s; margin-bottom: 2px; user-select: none; }
-    .nav-item:hover { background: var(--surface2); color: var(--text); }
-    .nav-item.active { background: var(--accent); color: #fff; }
-    .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
-    .sidebar-footer { padding: 12px 16px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text2); }
-
-    .main { flex: 1; margin-left: 220px; padding: 24px; }
-    .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
-    .topbar h1 { font-size: 22px; font-weight: 700; }
+    /* ── Top bar ── */
+    .topbar { position: sticky; top: 0; z-index: 50; background: var(--bg); border-bottom: 1px solid var(--border); padding: 0 32px; height: 56px; display: flex; align-items: center; justify-content: space-between; backdrop-filter: blur(8px); }
+    .topbar-left { display: flex; align-items: center; gap: 16px; }
+    .site-name { font-size: 15px; font-weight: 600; letter-spacing: -0.3px; }
+    .site-name span { color: var(--muted); font-weight: 300; }
     .topbar-right { display: flex; align-items: center; gap: 12px; }
-    .sync-info { font-size: 12px; color: var(--text2); }
-    .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: 500; transition: opacity 0.15s; }
-    .btn-primary { background: var(--accent); color: #fff; }
-    .btn:hover { opacity: 0.85; }
+    .sync-time { font-size: 12px; color: var(--muted); }
+    .btn { padding: 7px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); color: var(--text); cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.15s; }
+    .btn:hover { background: var(--bg3); border-color: var(--accent); }
 
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 20px; }
-    .card-title { font-size: 13px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
-    .card-title .sub { font-size: 11px; color: var(--text2); font-weight: 400; text-transform: none; letter-spacing: 0; }
+    /* ── Content ── */
+    .content { max-width: 860px; margin: 0 auto; padding: 40px 24px 80px; }
 
-    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
-    .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; }
-    .stat-value { font-size: 28px; font-weight: 700; }
-    .stat-label { font-size: 12px; color: var(--text2); margin-top: 4px; }
-    .stat-accent { color: var(--accent); }
-    .stat-green { color: var(--green); }
-    .stat-yellow { color: var(--yellow); }
-    .stat-red { color: var(--red); }
+    /* ── Month group ── */
+    .month-group { margin-bottom: 48px; }
+    .month-label { font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); padding: 0 0 20px 2px; border-bottom: 1px solid var(--border); margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between; }
+    .month-count { font-size: 11px; font-weight: 400; letter-spacing: 0; color: var(--muted); text-transform: none; }
 
-    .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
-    .chart-wrap { position: relative; height: 260px; }
-    .chart-wide { grid-column: 1 / -1; }
+    /* ── Day entry ── */
+    .day-entry { padding: 24px 0 24px; border-bottom: 1px solid rgba(30,58,95,0.6); }
+    .day-entry:last-child { border-bottom: none; }
 
-    .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    th { text-align: left; padding: 10px 12px; color: var(--text2); font-weight: 600; border-bottom: 1px solid var(--border); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
-    td { padding: 10px 12px; border-bottom: 1px solid var(--surface2); white-space: nowrap; }
-    tr:hover td { background: rgba(255,255,255,0.03); }
-    .mono { font-family: 'Courier New', monospace; font-size: 12px; }
+    /* ── Day header ── */
+    .day-header { display: flex; align-items: flex-start; gap: 20px; margin-bottom: 16px; }
+    .day-date-block { flex-shrink: 0; width: 52px; text-align: center; }
+    .day-date-num { font-size: 32px; font-weight: 300; line-height: 1; color: var(--accent); letter-spacing: -1px; }
+    .day-date-weekday { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin-top: 2px; }
 
-    .page { display: none; }
-    .page.active { display: block; }
+    /* ── Properties row ── */
+    .props { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; align-items: flex-start; padding-top: 4px; }
+    .prop { display: flex; align-items: center; gap: 5px; background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; padding: 3px 10px; font-size: 12px; }
+    .prop-label { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .prop-value { font-weight: 500; }
+    .prop.green .prop-value { color: var(--green); }
+    .prop.red .prop-value { color: var(--red); }
+    .prop.yellow .prop-value { color: var(--yellow); }
+    .prop.accent .prop-value { color: var(--accent); }
 
-    /* ── Daily Log table ── */
-    .dl-header { display: grid; grid-template-columns: 90px 70px 60px 130px minmax(220px, 1fr); gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 4px; }
-    .dl-header-cell { padding: 6px 10px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text2); font-weight: 600; }
-    .dl-row { display: grid; grid-template-columns: 90px 70px 60px 130px minmax(220px, 1fr); gap: 0; align-items: start; border-bottom: 1px solid var(--surface2); }
-    .dl-row:hover { background: rgba(255,255,255,0.03); }
-    .dl-cell { padding: 8px 10px; }
-    .dl-date { display: flex; flex-direction: column; justify-content: center; font-size: 11px; color: var(--text2); }
-    .dl-date .dl-weekday { font-size: 10px; text-transform: uppercase; opacity: 0.6; }
-    .dl-date .dl-day { font-size: 14px; font-weight: 600; color: var(--text); }
-    .dl-counts { display: flex; flex-direction: column; justify-content: center; gap: 2px; font-size: 12px; }
-    .dl-counts .total { font-size: 16px; font-weight: 700; color: var(--accent); }
-    .dl-counts .shifts { font-size: 10px; color: var(--text2); }
-    .dl-section { display: flex; align-items: center; gap: 6px; padding: 8px 10px; border-right: 1px solid var(--surface2); }
-    .dl-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-    .dl-section-name { font-size: 11px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
-    .dl-activities { display: flex; flex-direction: column; justify-content: center; gap: 3px; padding: 8px 10px; }
-    .dl-act { font-size: 12px; color: var(--text); line-height: 1.4; }
-    .dl-act.empty { color: var(--text2); font-style: italic; }
-    .dl-month-sep { padding: 12px 10px 6px; font-size: 13px; font-weight: 700; border-bottom: 1px solid var(--border); color: var(--text); grid-column: 1 / -1; margin-top: 8px; }
+    /* ── Section ── */
+    .section { margin-bottom: 12px; }
+    .section:last-child { margin-bottom: 0; }
+    .section-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 5px; display: flex; align-items: center; gap: 6px; }
+    .section-label .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+    .section-content { font-size: 13px; color: var(--text); padding-left: 11px; }
+    .section-content p { margin-bottom: 4px; }
+    .section-content p:last-child { margin-bottom: 0; }
+    .section-content.empty { color: var(--muted); font-style: italic; font-size: 12px; }
 
-    /* ── Filter tabs ── */
-    .filter-tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
-    .tab { padding: 5px 14px; border-radius: 20px; border: 1px solid var(--border); cursor: pointer; font-size: 12px; color: var(--text2); transition: all 0.15s; }
-    .tab:hover { border-color: var(--accent); color: var(--accent); }
-    .tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    /* ── Activity items ── */
+    .activity-item { display: inline; }
+    .activity-item::after { content: ' ·'; color: var(--muted); }
+    .activity-item:last-child::after { content: ''; }
 
-    @media (max-width: 768px) {
-      .sidebar { display: none; }
-      .main { margin-left: 0; padding: 16px; }
-      .stats { grid-template-columns: 1fr 1fr; }
-      .charts { grid-template-columns: 1fr; }
+    /* ── Delay badge ── */
+    .delay-item { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
+    .delay-hours { font-size: 13px; font-weight: 700; color: var(--red); min-width: 28px; }
+    .delay-cause { font-size: 13px; color: var(--text); }
+
+    /* ── Weather ── */
+    .weather-row { display: flex; gap: 12px; align-items: center; }
+    .weather-item { font-size: 12px; color: var(--muted); }
+    .weather-item span { color: var(--text); font-weight: 500; }
+
+    /* ── Tags / badges ── */
+    .tag { display: inline-block; padding: 1px 7px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+    .tag-blue { background: rgba(56,189,248,0.15); color: var(--accent); }
+    .tag-green { background: rgba(74,222,128,0.15); color: var(--green); }
+    .tag-yellow { background: rgba(250,204,21,0.15); color: var(--yellow); }
+    .tag-red { background: rgba(248,113,113,0.15); color: var(--red); }
+    .tag-purple { background: rgba(192,132,252,0.15); color: var(--purple); }
+
+    /* ── HSE badge ── */
+    .hse-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+
+    /* ── Editor ── */
+    .entry-footer { margin-top: 10px; font-size: 11px; color: var(--muted); padding-left: 11px; }
+    .entry-footer a { color: var(--muted); text-decoration: none; }
+    .entry-footer a:hover { color: var(--accent); }
+
+    /* ── Charts section ── */
+    .charts-section { margin-bottom: 48px; }
+    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+    .chart-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+    .chart-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin-bottom: 12px; }
+    .chart-wrap { position: relative; height: 180px; }
+    .chart-wrap-tall { position: relative; height: 260px; }
+
+    /* ── Filter / nav ── */
+    .filter-row { display: flex; gap: 8px; margin-bottom: 32px; flex-wrap: wrap; align-items: center; }
+    .filter-label { font-size: 12px; color: var(--muted); margin-right: 4px; }
+    .pill { padding: 5px 14px; border-radius: 20px; border: 1px solid var(--border); cursor: pointer; font-size: 12px; color: var(--muted); transition: all 0.15s; user-select: none; }
+    .pill:hover { border-color: var(--accent); color: var(--accent); }
+    .pill.active { background: var(--accent); border-color: var(--accent); color: #0f172a; font-weight: 600; }
+
+    /* ── Loading ── */
+    .loading { padding: 60px 0; text-align: center; color: var(--muted); font-size: 14px; }
+
+    @media (max-width: 640px) {
+      .content { padding: 24px 16px 60px; }
+      .day-header { gap: 14px; }
+      .day-date-num { font-size: 26px; }
+      .charts-grid { grid-template-columns: 1fr; }
+      .topbar { padding: 0 16px; }
     }
   </style>
 </head>
 <body>
 
-<div class="layout">
-  <aside class="sidebar">
-    <div class="sidebar-header">
-      <div class="sidebar-logo">EMA5</div>
-      <div class="sidebar-sub">Operations Dashboard</div>
-    </div>
-    <nav>
-      <div class="nav-item active" id="nav-overview" onclick="showPage('overview')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-        <span>Overview</span>
-      </div>
-      <div class="nav-item" id="nav-daily-log" onclick="showPage('daily-log')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        <span>Daily Log</span>
-      </div>
-      <div class="nav-item" id="nav-analytics" onclick="showPage('analytics')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-        <span>Analytics</span>
-      </div>
-      <div class="nav-item" id="nav-team" onclick="showPage('team')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        <span>Team</span>
-      </div>
-    </nav>
-    <div class="sidebar-footer" id="syncTime">Loading...</div>
-  </aside>
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="site-name">EMA5 <span>/ Daily Journal</span></div>
+  </div>
+  <div class="topbar-right">
+    <span class="sync-time" id="syncTime">Loading...</span>
+    <button class="btn" onclick="loadAll()">↻ Refresh</button>
+  </div>
+</div>
 
-  <main class="main">
-    <div class="topbar">
-      <h1 id="pageTitle">Overview</h1>
-      <div class="topbar-right">
-        <span class="sync-info" id="lastSync"></span>
-        <button class="btn btn-primary" onclick="loadAll()">↻ Refresh</button>
+<div class="content">
+  <!-- Stats + Charts -->
+  <div class="charts-section">
+    <div class="month-label">Overview</div>
+    <div class="filter-row" id="monthFilter"></div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">Headcount — Last 14 Days</div>
+        <div class="chart-wrap"><canvas id="chartHC"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Downtime by Cause (30d)</div>
+        <div class="chart-wrap"><canvas id="chartDowntime"></canvas></div>
       </div>
     </div>
+  </div>
 
-    <!-- Overview -->
-    <div class="page active" id="page-overview">
-      <div class="stats" id="statsRow"></div>
-
-      <div class="card">
-        <div class="card-title">Downtime by Cause <span class="sub">last 30 days — from Issues</span></div>
-        <div class="chart-wrap" style="height:220px"><canvas id="chartDowntime"></canvas></div>
-      </div>
-
-      <div class="charts">
-        <div class="chart-wide card">
-          <div class="card-title">Headcount — Last 14 Days</div>
-          <div class="chart-wrap"><canvas id="chartHeadcount"></canvas></div>
-        </div>
-        <div class="card">
-          <div class="card-title">Weekly Total</div>
-          <div class="chart-wrap"><canvas id="chartWeekly"></canvas></div>
-        </div>
-        <div class="card">
-          <div class="card-title">Qualifications</div>
-          <div class="chart-wrap"><canvas id="chartQualifications"></canvas></div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">Recent Entries</div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Date</th><th>Day</th><th>Total</th><th>M</th><th>A</th><th>N</th><th>Companies</th><th>Qualifications</th></tr></thead>
-            <tbody id="tableRecent"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- Daily Log -->
-    <div class="page" id="page-daily-log">
-      <div class="filter-tabs" id="monthTabs"></div>
-      <div id="dlContainer"><div style="padding:40px;text-align:center;color:var(--text2)">Loading...</div></div>
-    </div>
-
-    <!-- Analytics -->
-    <div class="page" id="page-analytics">
-      <div class="charts">
-        <div class="chart-wide card">
-          <div class="card-title">Daily Headcount — Last 30 Days</div>
-          <div class="chart-wrap"><canvas id="chartDaily30"></canvas></div>
-        </div>
-        <div class="card">
-          <div class="card-title">Qualifications Distribution</div>
-          <div class="chart-wrap"><canvas id="chartQualsDonut"></canvas></div>
-        </div>
-        <div class="card">
-          <div class="card-title">Weekly Total Headcount</div>
-          <div class="chart-wrap"><canvas id="chartWeekly2"></canvas></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Team -->
-    <div class="page" id="page-team">
-      <div class="card">
-        <div class="card-title">Team <span class="sub" id="teamCount"></span></div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Name</th><th>Emp. No</th><th>Qualification</th><th>Company</th><th>Supervisor</th><th>Last Seen</th></tr></thead>
-            <tbody id="tableTeam"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </main>
+  <!-- Journal entries -->
+  <div id="journalEntries"></div>
 </div>
 
 <script>
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxGtL_0WUsZXjhorA6WhCI2zzv6JqP9kDmtK4q7CExt5Z4v7nyqJDcMtTyg8Nq9UYr76g/exec';
-const DATA = { dailyLog: [], team: [], issues: [], loaded: false };
+const DATA = { dailyLog: [], issues: [], loaded: false };
 let charts = {};
 
 async function fetchSheet(sheet) {
-  const res = await fetch(`${GAS_URL}?sheet=${encodeURIComponent(sheet)}`);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const json = await res.json();
-  return json.data;
+  const r = await fetch(GAS_URL + '?sheet=' + encodeURIComponent(sheet));
+  if (!r.ok) throw new Error(r.status);
+  const j = await r.json();
+  return j.data;
 }
 
 function parseRows(raw) {
   if (!raw || raw.length < 2) return [];
-  const headers = raw[0].map(h => String(h || '').trim());
+  const hdrs = raw[0].map(h => String(h || '').trim());
   return raw.slice(1).map(row => {
-    const obj = {};
-    headers.forEach((h, i) => { obj[h] = row[i] ?? ''; });
-    return obj;
+    const o = {};
+    hdrs.forEach((h, i) => { o[h] = row[i] ?? ''; });
+    return o;
   });
 }
 
-function parseDelayHours(text) {
+function delayHours(text) {
   if (!text || text === '-' || text === '') return 0;
-  let hours = 0;
-  const hMatches = String(text).match(/(\d+(?:\.\d+)?)\s*h(?!ou)/gi);
-  if (hMatches) hours += hMatches.reduce((s, m) => s + parseFloat(m), 0);
-  const mMatches = String(text).match(/(\d+)\s*m(?!ou)/gi);
-  if (mMatches) hours += mMatches.reduce((s, m) => s + parseFloat(m) / 60, 0);
-  return Math.round(hours * 10) / 10;
+  let h = 0;
+  const m = String(text).match(/(\d+(?:\.\d+)?)\s*h(?!ou)/gi);
+  if (m) h += m.reduce((s, x) => s + parseFloat(x), 0);
+  const mm = String(text).match(/(\d+)\s*m(?!ou)/gi);
+  if (mm) h += mm.reduce((s, x) => s + parseFloat(x) / 60, 0);
+  return Math.round(h * 10) / 10;
 }
 
-function parseDelayCause(text) {
+function delayCause(text) {
   if (!text || text === '-' || text === '') return '';
-  const str = String(text).trim();
-  const first = str.split('.')[0].trim();
-  return first.length > 60 ? first.slice(0, 60) + '\u2026' : first;
+  return String(text).trim().split('.')[0].trim();
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 async function loadAll() {
   try {
-    const [dlRaw, teamRaw, issuesRaw] = await Promise.all([
-      fetchSheet('Daily Log'), fetchSheet('Team'), fetchSheet('Issues')
-    ]);
-    DATA.dailyLog = parseRows(dlRaw);
-    DATA.team = parseRows(teamRaw);
-    DATA.issues = parseRows(issuesRaw);
+    const [dl, iss] = await Promise.all([fetchSheet('Daily Log'), fetchSheet('Issues')]);
+    DATA.dailyLog = parseRows(dl);
+    DATA.issues = parseRows(iss);
     DATA.loaded = true;
-
-    const now = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-    document.getElementById('lastSync').textContent = `Synced ${now}`;
-    document.getElementById('syncTime').textContent = `Synced ${now}`;
+    document.getElementById('syncTime').textContent = 'Synced ' + new Date().toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'});
     renderAll();
-  } catch (e) { alert('Error: ' + e.message); }
+  } catch(e) {
+    document.getElementById('journalEntries').innerHTML = '<div class="loading">Error: ' + esc(e.message) + '</div>';
+  }
 }
 
 function renderAll() {
-  const rows = [...DATA.dailyLog].sort((a, b) => new Date(b.Date) - new Date(a.Date));
-  const sorted = [...rows].sort((a, b) => new Date(a.Date) - new Date(b.Date));
-  const last7 = rows.slice(0, 7);
-
-  renderStats(last7);
-  renderRecent(rows.slice(0, 20));
-  renderDailyLog();
-  renderTeam();
-  renderCharts(sorted, last7, rows);
-}
-
-function renderStats(last7) {
-  const total7 = last7.reduce((s, r) => s + (Number(r.Total) || 0), 0);
-  const avgDaily = last7.length ? Math.round(total7 / last7.length) : 0;
-  const latest = DATA.dailyLog[DATA.dailyLog.length - 1] || {};
-  const peak = Math.max(...DATA.dailyLog.map(r => Number(r.Total) || 0));
-  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 30);
-  const recentIssues = DATA.issues.filter(r => new Date(r.Date) >= cutoff);
-  const totalDowntime = recentIssues.reduce((s, r) => s + parseDelayHours(r.Delays), 0);
-
-  document.getElementById('statsRow').innerHTML = `
-    <div class="stat"><div class="stat-value stat-accent">${avgDaily}</div><div class="stat-label">Avg headcount / day (7d)</div></div>
-    <div class="stat"><div class="stat-value stat-green">${DATA.dailyLog.length}</div><div class="stat-label">Total log entries</div></div>
-    <div class="stat"><div class="stat-value">${Number(latest.Total) || 0}</div><div class="stat-label">Latest entry</div></div>
-    <div class="stat"><div class="stat-value stat-red">${totalDowntime}h</div><div class="stat-label">Downtime (last 30d)</div></div>
-  `;
-}
-
-function renderRecent(rows) {
-  document.querySelector('#tableRecent').innerHTML = rows.map(r => `
-    <tr>
-      <td class="mono">${fmtDate(r.Date)}</td>
-      <td>${r.Day || ''}</td>
-      <td><strong>${r.Total || 0}</strong></td>
-      <td>${r.Morning || 0}</td>
-      <td>${r.Afternoon || 0}</td>
-      <td>${r.Night || 0}</td>
-      <td>${escHtml(r.Companies || '')}</td>
-      <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis">${escHtml(r.Qualifications || '')}</td>
-    </tr>
-  `).join('');
-}
-
-function renderDailyLog() {
-  const rows = [...DATA.dailyLog].sort((a, b) => new Date(a.Date) - new Date(b.Date));
-
-  // Build Issues index
-  const issuesByDate = {};
+  // Build date → issue map
+  const issueByDate = {};
   DATA.issues.forEach(r => {
     const d = new Date(r.Date);
     if (isNaN(d)) return;
-    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-    issuesByDate[key] = r;
+    const k = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    issueByDate[k] = r;
   });
 
-  // Month tabs
-  const monthMap = {};
-  rows.forEach(r => {
+  // Sort entries by date desc
+  const sorted = [...DATA.dailyLog].sort((a, b) => new Date(b.Date) - new Date(a.Date));
+
+  // Month filter pills
+  const months = {};
+  sorted.forEach(r => {
     const d = new Date(r.Date);
     if (isNaN(d)) return;
-    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-    monthMap[key] = d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+    const k = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    if (!months[k]) months[k] = d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
   });
-  const sortedMonths = Object.keys(monthMap).sort().reverse();
-  const latestMonth = sortedMonths[0];
+  const monthKeys = Object.keys(months).sort().reverse();
+  const firstMonth = monthKeys[0];
 
-  const tabsEl = document.getElementById('monthTabs');
-  tabsEl.innerHTML = `<div class="tab active" onclick="renderDL('${latestMonth}', this)">Latest Month</div>` +
-    sortedMonths.slice(1).map(m => `<div class="tab" onclick="renderDL('${m}', this)">${monthMap[m]}</div>`).join('') +
-    `<div class="tab" onclick="renderDL('all', this)">All</div>`;
+  const filterEl = document.getElementById('monthFilter');
+  filterEl.innerHTML =
+    `<span class="filter-label">Month:</span>` +
+    monthKeys.map((k, i) => `<div class="pill ${i===0?'active':''}" onclick="setMonthFilter('${k}', this)">${months[k]}</div>`).join('') +
+    `<div class="pill" onclick="setMonthFilter('all', this)">All time</div>`;
 
-  renderDL(latestMonth, tabsEl.querySelector('.tab'));
+  renderJournal(firstMonth);
+  renderCharts();
 }
 
-function renderDL(monthKey, tabEl) {
-  document.querySelectorAll('#monthTabs .tab').forEach(t => t.classList.remove('active'));
-  if (tabEl) tabEl.classList.add('active');
+let currentMonth = null;
+function setMonthFilter(key, el) {
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  currentMonth = key;
+  renderJournal(key);
+}
 
-  const rows = [...DATA.dailyLog].sort((a, b) => new Date(a.Date) - new Date(b.Date));
-  const issuesByDate = {};
+function renderJournal(monthKey) {
+  const sorted = [...DATA.dailyLog].sort((a, b) => new Date(b.Date) - new Date(a.Date));
+
+  const issueByDate = {};
   DATA.issues.forEach(r => {
     const d = new Date(r.Date);
     if (isNaN(d)) return;
-    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-    issuesByDate[key] = r;
+    const k = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    issueByDate[k] = r;
   });
 
-  const filtered = monthKey === 'all' ? rows : rows.filter(r => {
+  const filtered = monthKey === 'all' ? sorted : sorted.filter(r => {
     const d = new Date(r.Date);
     if (isNaN(d)) return false;
-    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-    return key === monthKey;
+    const k = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    return k === monthKey;
   });
 
-  const sectionColors = {
-    'DEMATIC XBelt sorter': '#3b82f6',
-    'DEMATIC': '#22c55e',
-    'TGW': '#f59e0b',
-    'Unknown': '#64748b'
-  };
-
-  const container = document.getElementById('dlContainer');
-  if (filtered.length === 0) {
-    container.innerHTML = '<div class="card"><div class="card-title">No data</div></div>';
-    return;
-  }
-
-  // Group by month
+  // Group by year-month
   const byMonth = {};
   filtered.forEach(r => {
     const d = new Date(r.Date);
     if (isNaN(d)) return;
-    const mLabel = d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
-    if (!byMonth[mLabel]) byMonth[mLabel] = [];
-    byMonth[mLabel].push({ ...r, _d: d });
+    const mk = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const ml = d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+    if (!byMonth[mk]) byMonth[mk] = { label: ml, entries: [] };
+    byMonth[mk].entries.push({ ...r, _d: d });
   });
 
-  let html = `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
-    <div class="dl-header">
-      <div class="dl-header-cell">Date</div>
-      <div class="dl-header-cell">Headcount</div>
-      <div class="dl-header-cell">Shift</div>
-      <div class="dl-header-cell">Section</div>
-      <div class="dl-header-cell">Activities</div>
-    </div>`;
+  const container = document.getElementById('journalEntries');
+  if (Object.keys(byMonth).length === 0) {
+    container.innerHTML = '<div class="loading">No entries found.</div>';
+    return;
+  }
 
-  Object.entries(byMonth).forEach(([monthLabel, monthRows]) => {
-    html += `<div class="dl-month-sep">${monthLabel}</div>`;
-    monthRows.slice().reverse().forEach(r => {
-      const dateKey = `${r._d.getFullYear()}-${String(r._d.getMonth()+1).padStart(2,'0')}-${String(r._d.getDate()).padStart(2,'0')}`;
-      const issue = issuesByDate[dateKey];
-      const activities = issue ? (issue.Activities || '') : (r.Qualifications || '');
-      const section = issue ? (issue.Section || 'Unknown') : 'Unknown';
-      const dotColor = sectionColors[section] || sectionColors['Unknown'];
+  let html = '';
+  Object.entries(byMonth).sort((a, b) => b[0].localeCompare(a[0])).forEach(([mk, { label, entries }]) => {
+    html += `<div class="month-group">
+      <div class="month-label">
+        ${label}
+        <span class="month-count">${entries.length} ${entries.length === 1 ? 'entry' : 'entries'}</span>
+      </div>`;
 
-      const actParts = activities.split(',').map(s => s.trim()).filter(Boolean);
+    entries.forEach(r => {
+      const dk = `${r._d.getFullYear()}-${String(r._d.getMonth()+1).padStart(2,'0')}-${String(r._d.getDate()).padStart(2,'0')}`;
+      const iss = issueByDate[dk];
+      const total = Number(r.Total) || 0;
+      const mCount = Number(r.Morning) || 0;
+      const aCount = Number(r.Afternoon) || 0;
+      const nCount = Number(r.Night) || 0;
+      const dh = iss ? delayHours(iss.Delays) : 0;
+      const dc = iss ? delayCause(iss.Delays) : '';
+      const acts = iss ? (iss.Activities || '') : '';
+      const hse = iss ? (iss['HSE Activities'] || '') : '';
+      const notes = iss ? (iss.Notes || '') : '';
+      const editor = iss ? (iss.Editor || '') : '';
+      const weather = iss ? (iss.Weather || '') : '';
+      const temp = iss ? (iss.Temperature || '') : '';
+      const completed = iss ? (iss['Completed Tasks %'] || '') : '';
+      const section = iss ? (iss.Section || '') : '';
+      const actParts = acts.split(',').map(s => s.trim()).filter(Boolean);
 
-      html += `<div class="dl-row">
-        <div class="dl-cell dl-date">
-          <span class="dl-weekday">${r._d.toLocaleDateString('en-GB', { weekday: 'short' })}</span>
-          <span class="dl-day">${r._d.getDate()}</span>
+      // Section color dot
+      const dotColor = section.includes('Dematic') || section.includes('XBelt') ? '#38bdf8' :
+                        section.includes('TGW') ? '#facc15' : '#64748b';
+
+      html += `<div class="day-entry">
+        <div class="day-header">
+          <div class="day-date-block">
+            <div class="day-date-num">${r._d.getDate()}</div>
+            <div class="day-date-weekday">${r._d.toLocaleDateString('en-GB', { weekday: 'short' })}</div>
+          </div>
+          <div class="props">
+            ${total > 0 ? `<div class="prop green"><span class="prop-label">HC</span><span class="prop-value">${total}</span></div>` : ''}
+            ${mCount > 0 ? `<div class="prop"><span class="prop-label">M</span><span class="prop-value">${mCount}</span></div>` : ''}
+            ${aCount > 0 ? `<div class="prop"><span class="prop-label">A</span><span class="prop-value">${aCount}</span></div>` : ''}
+            ${nCount > 0 ? `<div class="prop accent"><span class="prop-label">N</span><span class="prop-value">${nCount}</span></div>` : ''}
+            ${dh > 0 ? `<div class="prop red"><span class="prop-label">Delay</span><span class="prop-value">${dh}h</span></div>` : ''}
+            ${completed && completed !== '0' ? `<div class="prop yellow"><span class="prop-label">Done</span><span class="prop-value">${completed}</span></div>` : ''}
+            ${section ? `<div class="prop" style="border-color:rgba(56,189,248,0.3)"><span class="dot" style="width:5px;height:5px;border-radius:50%;background:${dotColor};flex-shrink:0"></span><span class="prop-value" style="font-size:11px;color:var(--muted)">${esc(section)}</span></div>` : ''}
+          </div>
         </div>
-        <div class="dl-cell dl-counts">
-          <span class="total">${r.Total || 0}</span>
-          <span class="shifts">M:${r.Morning||0} A:${r.Afternoon||0} N:${r.Night||0}</span>
-        </div>
-        <div class="dl-cell" style="display:flex;align-items:center">
-          <div class="dl-dot" style="background:${dotColor}"></div>
-          <span class="dl-section-name" title="${escHtml(section)}">${escHtml(section)}</span>
-        </div>
-        <div class="dl-activities">
-          ${actParts.length > 0
-            ? actParts.map(a => `<div class="dl-act">${escHtml(a)}</div>`).join('')
-            : '<div class="dl-act empty">No activities</div>'
-          }
-        </div>
+
+        ${actParts.length > 0 ? `<div class="section">
+          <div class="section-label"><div class="dot" style="background:#38bdf8"></div>Activities</div>
+          <div class="section-content">${actParts.map(a => `<span class="activity-item">${esc(a)}</span>`).join('')}</div>
+        </div>` : ''}
+
+        ${dh > 0 && dc ? `<div class="section">
+          <div class="section-label"><div class="dot" style="background:#f87171"></div>Delays</div>
+          <div class="section-content">
+            <div class="delay-item">
+              <div class="delay-hours">${dh}h</div>
+              <div class="delay-cause">${esc(dc)}</div>
+            </div>
+          </div>
+        </div>` : ''}
+
+        ${hse ? `<div class="section">
+          <div class="section-label"><div class="dot" style="background:#4ade80"></div>HSE</div>
+          <div class="section-content">${esc(hse)}</div>
+        </div>` : ''}
+
+        ${notes ? `<div class="section">
+          <div class="section-label"><div class="dot" style="background:#facc15"></div>Notes</div>
+          <div class="section-content">${esc(notes)}</div>
+        </div>` : ''}
+
+        ${weather || temp ? `<div class="section">
+          <div class="section-label"><div class="dot" style="background:#94a3b8"></div>Weather</div>
+          <div class="section-content">
+            <div class="weather-row">
+              ${weather ? `<div class="weather-item">${esc(weather)}</div>` : ''}
+              ${temp ? `<div class="weather-item">Temp: <span>${esc(temp)}</span></div>` : ''}
+            </div>
+          </div>
+        </div>` : ''}
+
+        ${editor ? `<div class="entry-footer">Logged by ${esc(editor)}</div>` : ''}
       </div>`;
     });
+
+    html += '</div>';
   });
 
-  html += '</div>';
   container.innerHTML = html;
 }
 
-function renderTeam() {
-  const rows = [...DATA.team].sort((a, b) => (a.Name || '').localeCompare(b.Name || ''));
-  document.getElementById('teamCount').textContent = `— ${rows.length} members`;
-  document.getElementById('tableTeam').innerHTML = rows.map(r => `
-    <tr>
-      <td><strong>${escHtml(r.Name || '')}</strong></td>
-      <td class="mono">${escHtml(r['Employee No'] || '')}</td>
-      <td><span style="background:rgba(59,130,246,0.2);color:var(--accent);padding:2px 8px;border-radius:12px;font-size:11px">${escHtml(r.Qualification || '')}</span></td>
-      <td>${escHtml(r.Company || '')}</td>
-      <td>${escHtml(r.Supervisor || '')}</td>
-      <td class="mono" style="color:var(--text2)">${fmtDate(r['Last Seen'] || '')}</td>
-    </tr>
-  `).join('');
-}
-
-function renderCharts(sorted, last7, allRows) {
+function renderCharts() {
   Object.values(charts).forEach(c => { try { c.destroy(); } catch(e) {} });
   charts = {};
 
+  const sorted = [...DATA.dailyLog].sort((a, b) => new Date(a.Date) - new Date(b.Date));
   const last14 = sorted.slice(-14);
 
-  // Headcount stacked bar
-  charts.hc = new Chart(document.getElementById('chartHeadcount'), {
+  // Headcount 14d
+  const labels = last14.map(r => {
+    const d = new Date(r.Date);
+    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+  });
+  charts.hc = new Chart(document.getElementById('chartHC'), {
     type: 'bar',
     data: {
-      labels: last14.map(r => {
-        const d = new Date(r.Date);
-        return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
-      }),
+      labels,
       datasets: [
-        { label: 'Morning', data: last14.map(r => Number(r.Morning)||0), backgroundColor: '#3b82f6' },
-        { label: 'Afternoon', data: last14.map(r => Number(r.Afternoon)||0), backgroundColor: '#f59e0b' },
-        { label: 'Night', data: last14.map(r => Number(r.Night)||0), backgroundColor: '#a855f7' }
+        { label: 'Morning', data: last14.map(r => Number(r.Morning)||0), backgroundColor: '#38bdf8' },
+        { label: 'Afternoon', data: last14.map(r => Number(r.Afternoon)||0), backgroundColor: '#facc15' },
+        { label: 'Night', data: last14.map(r => Number(r.Night)||0), backgroundColor: '#c084fc' }
       ]
     },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } }
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } }, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } }
   });
 
-  // Qualifications
-  const qCounts = {};
-  sorted.forEach(r => {
-    (r.Qualifications || '').split(',').forEach(q => {
-      const m = q.trim().match(/^(.+?):\s*(\d+)$/);
-      if (m) qCounts[m[1]] = (qCounts[m[1]] || 0) + Number(m[2]);
-    });
-  });
-  const qLabels = Object.keys(qCounts).sort((a, b) => qCounts[b] - qCounts[a]).slice(0, 8);
-  const qData = qLabels.map(k => qCounts[k]);
-  const qColors = ['#3b82f6','#22c55e','#f59e0b','#ef4444','#a855f7','#06b6d4','#84cc16','#f97316'];
-  charts.quals = new Chart(document.getElementById('chartQualifications'), {
-    type: 'doughnut',
-    data: { labels: qLabels, datasets: [{ data: qData, backgroundColor: qColors }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } } }
-  });
-
-  // Weekly
-  const weekly = {};
-  sorted.forEach(r => {
-    const d = new Date(r.Date);
-    const yw = `${d.getFullYear()}-W${String(getISOWeek(d)).padStart(2,'0')}`;
-    weekly[yw] = (weekly[yw] || 0) + (Number(r.Total) || 0);
-  });
-  const wKeys = Object.keys(weekly).sort();
-  charts.weekly = new Chart(document.getElementById('chartWeekly'), {
-    type: 'line',
-    data: { labels: wKeys, datasets: [{ label: 'Total', data: wKeys.map(k => weekly[k]), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.3 }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
-  });
-
-  // Downtime by cause
-  const cutoff30 = new Date(); cutoff30.setDate(cutoff30.getDate() - 30);
-  const recentIssues = DATA.issues.filter(r => new Date(r.Date) >= cutoff30);
-  const downtimeByCause = {};
-  recentIssues.forEach(r => {
-    const h = parseDelayHours(r.Delays);
+  // Downtime by cause 30d
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 30);
+  const recent = DATA.issues.filter(r => new Date(r.Date) >= cutoff);
+  const byCause = {};
+  recent.forEach(r => {
+    const h = delayHours(r.Delays);
     if (h > 0) {
-      const cause = parseDelayCause(r.Delays) || 'Unknown';
-      downtimeByCause[cause] = (downtimeByCause[cause] || 0) + h;
+      const cause = delayCause(r.Delays) || 'Unknown';
+      byCause[cause] = (byCause[cause] || 0) + h;
     }
   });
-  const sortedCauses = Object.entries(downtimeByCause).sort((a, b) => b[1] - a[1]);
-  const downtimeColors = ['#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#a855f7','#06b6d4','#84cc16'];
+  const sortedCauses = Object.entries(byCause).sort((a, b) => b[1] - a[1]);
+  const colors = ['#f87171','#fb923c','#facc15','#4ade80','#38bdf8','#c084fc','#a78bfa','#f472b6'];
+
   if (sortedCauses.length > 0) {
     charts.downtime = new Chart(document.getElementById('chartDowntime'), {
       type: 'bar',
       data: {
-        labels: sortedCauses.map(([c]) => c.length > 45 ? c.slice(0, 45) + '\u2026' : c),
-        datasets: [{ label: 'Hours lost', data: sortedCauses.map(([, h]) => h), backgroundColor: sortedCauses.map((_, i) => downtimeColors[i % downtimeColors.length]) }]
+        labels: sortedCauses.map(([c]) => c.length > 35 ? c.slice(0,35)+'\u2026' : c),
+        datasets: [{ data: sortedCauses.map(([,h]) => h), backgroundColor: sortedCauses.map((_,i) => colors[i%colors.length]) }]
       },
-      options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, title: { display: true, text: 'Hours', color: '#94a3b8' } } } }
+      options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, title: { display: true, text: 'Hours', color: '#64748b', font: { size: 11 } } } } }
     });
-  } else {
-    document.getElementById('chartDowntime').parentElement.style.cssText += ';display:flex;align-items:center;justify-content:center';
-    document.getElementById('chartDowntime').style.display = 'none';
-    document.getElementById('chartDowntime').parentElement.innerHTML += '<div style="text-align:center;padding:20px;color:var(--green);font-size:14px">No downtime recorded in 30 days \u2705</div>';
   }
-
-  // Analytics
-  const last30 = sorted.slice(-30);
-  charts.d30 = new Chart(document.getElementById('chartDaily30'), {
-    type: 'bar',
-    data: {
-      labels: last30.map(r => {
-        const d = new Date(r.Date);
-        return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
-      }),
-      datasets: [
-        { label: 'Morning', data: last30.map(r => Number(r.Morning)||0), backgroundColor: '#3b82f6' },
-        { label: 'Afternoon', data: last30.map(r => Number(r.Afternoon)||0), backgroundColor: '#f59e0b' },
-        { label: 'Night', data: last30.map(r => Number(r.Night)||0), backgroundColor: '#a855f7' }
-      ]
-    },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } }
-  });
-  charts.quals2 = new Chart(document.getElementById('chartQualsDonut'), {
-    type: 'doughnut',
-    data: { labels: qLabels, datasets: [{ data: qData, backgroundColor: qColors }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } } }
-  });
-  charts.weekly2 = new Chart(document.getElementById('chartWeekly2'), {
-    type: 'line',
-    data: { labels: wKeys, datasets: [{ label: 'Total', data: wKeys.map(k => weekly[k]), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.3 }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
-  });
-}
-
-function showPage(name) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById(`page-${name}`).classList.add('active');
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById(`nav-${name}`).classList.add('active');
-  const titles = { overview: 'Overview', 'daily-log': 'Daily Log', analytics: 'Analytics', team: 'Team' };
-  document.getElementById('pageTitle').textContent = titles[name] || name;
-}
-
-function fmtDate(v) {
-  if (!v) return '';
-  const d = new Date(v);
-  if (isNaN(d)) return '';
-  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' });
-}
-
-function escHtml(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-function getISOWeek(date) {
-  const d = new Date(date);
-  d.setHours(0,0,0,0);
-  d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
-  const week1 = new Date(d.getFullYear(), 0, 4);
-  return 1 + Math.round(((d - week1) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
 }
 
 loadAll();
