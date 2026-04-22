@@ -538,8 +538,10 @@ function parseDateDMY(s) {
 
 function delayHours(text) {
   if (!text) return 0;
+  // Replace HH:MM timestamps with placeholder to avoid misreading as hours
+  const cleaned = String(text).replace(/\d{1,2}:\d{2}(?:\d{2})?/g, 'TEMP_TIME');
   let h = 0;
-  const m = String(text).match(/(\d+(?:\.\d+)?)\s*h(?!ou)/gi);
+  const m = cleaned.match(/(\d+(?:\.\d+)?)\s*h(?!ou)/gi);
   if (m) h += m.reduce((s, x) => s + parseFloat(x), 0);
   return Math.round(h * 10) / 10;
 }
@@ -694,85 +696,55 @@ function renderCharts() {
     });
   }
 
-// ── Delay Buckets — Since First Daily Log Entry ──
-  function delayCauseBucket(text) {
-    if (!text) return null;
-    const t = text.toLowerCase();
-    if (t.includes('sintec')) return '⚠️ Sintec Issues';
-    if (t.includes('power') || t.includes('outage') || t.includes('cabinet') || t.includes('ceetech') || t.includes('ian thomas') || t.includes('waiting for power')) return '⚡ Power / Electrical';
-    if (t.includes('fencing') || t.includes('no access') || t.includes('limited access') || t.includes('blocked access') || (t.includes('no lifting') && t.includes('past'))) return '🚧 Access / Fencing';
-    if (t.includes('material blocking') || t.includes('laydown') || t.includes('southeast area not ready') || t.includes('material from nw')) return '📦 Material / Storage';
-    if (t.includes('steel') || t.includes('structure') || (t.includes('mitek') && (t.includes('material') || t.includes('beams') || t.includes('hanger clash'))) || t.includes('maintenance platform')) return '🔩 Steelwork / Structure';
-    if (t.includes('mitek')) return '🏭 Mitek Delays';
-    if (t.includes('dematic') && t.includes('not ready')) return '🏭 Dematic Delays';
-    if (t.includes('fire') || t.includes('standown') || t.includes('safety device')) return '🦺 Safety Standown';
-    if (t.includes('flts not approved') || t.includes('flts') || t.includes('lifting plan') || t.includes('lifting') && (t.includes('plan') || t.includes('not'))) return '🏗️ Lifting / FLT Approval';
-    if (t.includes('induction') || t.includes('winvic')) return '📋 Admin / Induction';
-    if (t.includes('delivery') || t.includes('alps')) return '📦 Logistics';
-    if (t.includes('stair') || t.includes('m17 check')) return '🔧 Site Condition';
-    if (t.includes('tape') || t.includes('dust')) return '🔧 Rework / Quality';
-    if (t.includes('sorter') || t.includes('xbelt') || t.includes('m41') || t.includes('m36')) return '🔧 Sorter Installation';
-    return null;
-  }
-
+// ── Delay Buckets — Count + Hours (all daily log entries) ──
   if (charts.delay) charts.delay.destroy();
-  const byBucket = {};
-  // Find first entry date from daily log
-  let firstEntry = null;
+  const byBucket = {};  // { bucketName: { hours: 0, count: 0 } }
+
   DATA.dailyLog.forEach(r => {
-    const d = parseDateDMY(r.Date || r.date);
-    if (d && (!firstEntry || d < firstEntry)) firstEntry = d;
-  });
-  
-  DATA.dailyLog.forEach(r => {
-    const h = delayHours(r.Delays || r.delays);
-    if (h > 0) {
-      const text = String(r.Delays || r.delays || '');
-      const bucket = delayCauseBucket(text);
-      if (bucket) {
-        byBucket[bucket] = (byBucket[bucket] || 0) + h;
-      } else {
-        byBucket['📋 Other'] = (byBucket['📋 Other'] || 0) + h;
-      }
-    }
+    const text = String(r.Delays || r.delays || '');
+    const h = delayHours(text);
+    const bucket = delayCauseBucket(text);
+    const name = bucket || '📋 Other';
+    if (!byBucket[name]) byBucket[name] = { hours: 0, count: 0 };
+    byBucket[name].hours += h;
+    byBucket[name].count += 1;
   });
 
-  const sortedBuckets = Object.entries(byBucket).sort((a, b) => b[1] - a[1]);
-  const totalDelayHours = sortedBuckets.reduce((s, [, h]) => s + h, 0);
-  
-  // Build chart
+  const sortedBuckets = Object.entries(byBucket).sort((a, b) => b[1].count - a[1].count);
+  const totalCount = sortedBuckets.reduce((s, [, v]) => s + v.count, 0);
+  const totalHours = sortedBuckets.reduce((s, [, v]) => s + v.hours, 0);
+
+  const bucketColors = {
+    '⚠️ Sintec Issues': '#DC2626',
+    '⚡ Power / Electrical': '#7C3AED',
+    '🚧 Access / Fencing': '#CA8A04',
+    '📦 Material / Storage': '#D97706',
+    '🔩 Steelwork / Structure': '#DC2626',
+    '🏭 Mitek Delays': '#EA580C',
+    '🏭 Dematic Delays': '#EA580C',
+    '🦺 Safety Standown': '#DC2626',
+    '🏗️ Lifting / FLT Approval': '#2563EB',
+    '📋 Admin / Induction': '#0891B2',
+    '📦 Logistics': '#059669',
+    '🔧 Site Condition': '#CA8A04',
+    '🔧 Rework / Quality': '#CA8A04',
+    '🔧 Sorter Installation': '#CA8A04',
+    '📋 Other': '#6B7280'
+  };
+
   if (sortedBuckets.length > 0) {
-    const bucketColors = {
-      '⚠️ Sintec Issues': '#DC2626',
-      '⚡ Power / Electrical': '#7C3AED',
-      '🚧 Access / Fencing': '#CA8A04',
-      '📦 Material / Storage': '#D97706',
-      '🔩 Steelwork / Structure': '#DC2626',
-      '🏭 Mitek Delays': '#EA580C',
-      '🏭 Dematic Delays': '#EA580C',
-      '🦺 Safety Standown': '#DC2626',
-      '🏗️ Lifting / FLT Approval': '#2563EB',
-      '📋 Admin / Induction': '#0891B2',
-      '📦 Logistics': '#059669',
-      '🔧 Site Condition': '#CA8A04',
-      '🔧 Rework / Quality': '#CA8A04',
-      '🔧 Sorter Installation': '#CA8A04',
-      '📋 Other': '#6B7280'
-    };
-    
     const colors = sortedBuckets.map(([b]) => bucketColors[b] || '#6B7280');
-    const pctShare = sortedBuckets.map(([, h]) => Math.round(h / totalDelayHours * 100));
-    
     charts.delay = new Chart(document.getElementById('chartDelay'), {
       type: 'bar',
       data: {
         labels: sortedBuckets.map(([b]) => b),
         datasets: [{
-          data: sortedBuckets.map(([, h]) => h),
+          label: 'Events',
+          data: sortedBuckets.map(([, v]) => v.count),
           backgroundColor: colors,
           borderRadius: 6,
           borderSkipped: false,
-          barThickness: 20
+          barThickness: 22
         }]
       },
       options: {
@@ -784,9 +756,9 @@ function renderCharts() {
           tooltip: {
             callbacks: {
               label: ctx => {
-                const h = ctx.parsed.x;
-                const pct = pctShare[ctx.dataIndex];
-                return ' ' + h + 'h lost (' + pct + '%)';
+                const [, v] = sortedBuckets[ctx.dataIndex];
+                const pct = Math.round(v.count / totalCount * 100);
+                return ' ' + v.count + 'x (' + pct + '%)' + (v.hours > 0 ? ' · ' + v.hours + 'h lost' : '');
               }
             }
           }
@@ -794,33 +766,45 @@ function renderCharts() {
         scales: {
           x: {
             beginAtZero: true,
-            title: { display: true, text: 'Hours Lost' },
-            grid: { color: 'rgba(0,0,0,0.04)' }
+            title: { display: true, text: 'Occurrences' },
+            grid: { color: 'rgba(0,0,0,0.04)' },
+            ticks: { stepSize: 1 }
           },
-          y: {
-            grid: { display: false },
-            ticks: { font: { size: 11 } }
-          }
+          y: { grid: { display: false }, ticks: { font: { size: 11 } } }
         }
       }
     });
-    
-    // Also add a summary table below the chart
+
     const delaySummaryEl = document.getElementById('delaySummary');
     if (delaySummaryEl) {
-      delaySummaryEl.innerHTML = '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:8px">' +
-        sortedBuckets.map(([b, h]) => {
-          const pct = Math.round(h / totalDelayHours * 100);
+      delaySummaryEl.innerHTML = '<div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">' +
+        '<div style="flex:1;min-width:110px;padding:8px 12px;background:rgba(220,38,38,0.08);border-radius:8px;border-left:3px solid #DC2626;text-align:center">' +
+          '<div style="font-size:20px;font-weight:800;color:#DC2626">' + totalCount + '</div>' +
+          '<div style="font-size:10px;color:var(--muted)">total events</div></div>' +
+        '<div style="flex:1;min-width:110px;padding:8px 12px;background:rgba(234,179,8,0.08);border-radius:8px;border-left:3px solid #CA8A04;text-align:center">' +
+          '<div style="font-size:20px;font-weight:800;color:#CA8A04">' + totalHours + 'h</div>' +
+          '<div style="font-size:10px;color:var(--muted)">hours logged</div></div>' +
+        '<div style="flex:1;min-width:110px;padding:8px 12px;background:rgba(37,99,235,0.08);border-radius:8px;border-left:3px solid #2563EB;text-align:center">' +
+          '<div style="font-size:20px;font-weight:800;color:#2563EB">' + sortedBuckets.length + '</div>' +
+          '<div style="font-size:10px;color:var(--muted)">categories</div></div>' +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:4px">' +
+        sortedBuckets.map(([b, v]) => {
+          const pct = Math.round(v.count / totalCount * 100);
           const color = bucketColors[b] || '#6B7280';
           return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:rgba(0,0,0,0.03);border-radius:6px;border-left:3px solid ' + color + '">' +
-            '<span style="font-size:11px;font-weight:600">' + b + '</span>' +
-            '<div><span style="font-size:12px;font-weight:800;color:' + color + '">' + h + 'h</span> <span style="font-size:10px;color:var(--muted)">' + pct + '%</span></div></div>';
+            '<span style="font-size:11px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + b + '</span>' +
+            '<div style="display:flex;gap:6px;align-items:center;flex-shrink:0">' +
+              '<span style="font-size:11px;font-weight:800;color:' + color + '">' + v.count + 'x</span>' +
+              (v.hours > 0 ? '<span style="font-size:10px;color:var(--muted)">' + v.hours + 'h</span>' : '') +
+            '</div></div>';
         }).join('') + '</div>';
     }
   } else {
     const delaySummaryEl = document.getElementById('delaySummary');
-    if (delaySummaryEl) delaySummaryEl.innerHTML = '<div style="color:var(--green);font-size:13px;text-align:center;padding:16px">✅ No delays recorded — site running clean</div>';
+    if (delaySummaryEl) delaySummaryEl.innerHTML = '<div style="color:var(--green);font-size:13px;text-align:center;padding:16px">No delay events recorded</div>';
   }
+
 
   // Progress overview by PLC area
   if (charts.progress) charts.progress.destroy();
@@ -1525,25 +1509,43 @@ function renderSafety() {
   }).join('');
   document.getElementById('topHazardsList').innerHTML = hazHtml || '<div style="color:var(--muted);text-align:center;padding:16px">—</div>';
 
-  // STOP WORK table — with injury potential + status text
+  // STOP WORK table — expandable rows, English labels
+  const swRows = d.stop_work.map((e, i) => {
+    const detail = e.detail || '—';
+    const short = detail.length > 60 ? detail.slice(0, 60) + '…' : detail;
+    const isOpen = e.resolved !== 'Yes';
+    return `<div style="border-bottom:1px solid var(--border);padding:8px 6px" class="sw-row">
+      <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:4px">
+        <div style="flex:0 0 70px;font-size:11px;color:var(--muted);white-space:nowrap;padding-top:1px">${e.date}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:11px;font-weight:700;color:var(--red)">${e.category}</div>
+          <div style="font-size:11px;color:var(--text);margin-top:2px">
+            <span class="sw-detail-short" data-idx="${i}">${short}</span>
+            ${detail.length > 60 ? '<span class="sw-detail-full" data-idx="${i}" style="display:none">' + detail + '</span> <span style="color:var(--accent);cursor:pointer;font-size:10px" onclick="toggleSWDetail(' + i + ')">read more</span>' : ''}
+          </div>
+        </div>
+        <div style="flex:0 0 auto;text-align:center;min-width:60px">
+          <div style="font-size:12px;font-weight:800;color:${e.injury_potential && e.injury_potential !== 'None' ? 'var(--yellow)' : 'var(--muted)'}">${e.injury_potential || '—'}</div>
+          <div style="font-size:9px;color:var(--muted)">INJURY</div>
+        </div>
+        <div style="flex:0 0 auto;text-align:center;min-width:60px">
+          <div style="font-size:12px;font-weight:800;color:${e.resolved === 'Yes' ? 'var(--green)' : 'var(--yellow)'}">${e.resolved === 'Yes' ? '✅' : '⏳'}</div>
+          <div style="font-size:9px;color:var(--muted)">${e.resolved === 'Yes' ? 'Closed' : 'Open'}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
   const swHtml = d.stop_work.length > 0
-    ? `<table style="width:100%;border-collapse:collapse;font-size:11px">
-        <tr style="background:var(--surface2);font-weight:600">
-          <td style="padding:6px 8px;border-bottom:1px solid var(--border)">Date</td>
-          <td style="padding:6px 8px;border-bottom:1px solid var(--border)">Category</td>
-          <td style="padding:6px 8px;border-bottom:1px solid var(--border)">Detail</td>
-          <td style="padding:6px 8px;border-bottom:1px solid var(--border);text-align:center">Injury Pot.</td>
-          <td style="padding:6px 8px;border-bottom:1px solid var(--border);text-align:center">Status</td>
-        </tr>` +
-        d.stop_work.map(e => `<tr>
-          <td style="padding:5px 8px;border-bottom:1px solid var(--border);white-space:nowrap">${e.date}</td>
-          <td style="padding:5px 8px;border-bottom:1px solid var(--border);color:var(--red);font-weight:600;white-space:nowrap;font-size:11px">${e.category}</td>
-          <td style="padding:5px 8px;border-bottom:1px solid var(--border);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.detail || '—'}</td>
-          <td style="padding:5px 8px;border-bottom:1px solid var(--border);color:${e.injury_potential && e.injury_potential !== 'None' ? 'var(--yellow)' : 'var(--muted)'};font-weight:700;text-align:center">${e.injury_potential || '—'}</td>
-          <td style="padding:5px 8px;border-bottom:1px solid var(--border);color:${e.resolved === 'Yes' ? 'var(--green)' : 'var(--yellow)'};white-space:nowrap">${e.resolved === 'Yes' ? '✅ Risolto' : '⏳ Aperto'}</td>
-        </tr>`).join('') + '</table>'
-    : '<div style="color:var(--green);text-align:center;padding:14px;font-weight:600">✅ No STOP WORK events — site is safe</div>';
+    ? swRows
+    : '<div style="color:var(--green);text-align:center;padding:16px;font-size:13px;font-weight:600">✅ No STOP WORK events — site is safe</div>';
   document.getElementById('stopWorkTable').innerHTML = swHtml;
+}
+
+function toggleSWDetail(idx) {
+  document.querySelectorAll('.sw-detail-short[data-idx="' + idx + '"]').forEach(el => el.style.display = el.style.display === 'none' ? '' : 'none');
+  document.querySelectorAll('.sw-detail-full[data-idx="' + idx + '"]').forEach(el => el.style.display = el.style.display === 'none' ? '' : 'none');
+}
 
   // Focus areas — enriched with stats
   const fa = [];
