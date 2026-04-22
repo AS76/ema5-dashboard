@@ -269,6 +269,7 @@
       <div class="tab" id="tab-team" onclick="showView('team')">Team</div>
       <div class="tab" id="tab-progress" onclick="showView('progress')">Progress</div>
       <div class="tab" id="tab-lessons" onclick="showView('lessons')">Lessons</div>
+    <div class="tab" id="tab-safety" onclick="showView('safety')">⚠ Safety</div>
     </div>
   </div>
 </div>
@@ -977,13 +978,150 @@ function showView(name) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById('view-' + name).classList.add('active');
   document.getElementById('tab-' + name).classList.add('active');
-  const titles = { dashboard: 'Operations', team: 'Team', journal: 'Daily Journal', progress: 'Site Progress' };
+  const titles = { dashboard: 'Operations', team: 'Team', journal: 'Daily Journal', progress: 'Site Progress', safety: 'Safety', lessons: 'Lessons' };
   document.getElementById('viewTitle').textContent = titles[name];
   window.scrollTo(0, 0);
 }
 
 // ── Boot ──
 loadAll();
+
+// ── Render Safety ──
+function renderSafety() {
+  if (!window.SAFETY_DATA) return;
+  const d = window.SAFETY_DATA;
+  
+  // KPI cards — last week
+  const weeks = Object.keys(d.weekly).sort().slice(-8);
+  const lastWk = weeks[weeks.length - 1];
+  const prevWk = weeks.length > 1 ? weeks[weeks.length - 2] : lastWk;
+  const lw = d.weekly[lastWk] || {positive:0,total:0,stop_work:0,resolved:0};
+  const pw = d.weekly[prevWk] || {positive:0,total:0,stop_work:0,resolved:0};
+  
+  const posRate = lw.total > 0 ? Math.round(lw.positive / lw.total * 100) : 0;
+  const prevRate = pw.total > 0 ? Math.round(pw.positive / pw.total * 100) : 0;
+  const trend = posRate >= prevRate ? '↑ vs prev week' : '↓ vs prev week';
+  
+  document.getElementById('kpiPositiveRate').textContent = posRate + '%';
+  document.getElementById('kpiPositiveTrend').textContent = trend;
+  document.getElementById('kpiStopWork').textContent = lw.stop_work || 0;
+  document.getElementById('kpiResolution').textContent = d.totals.resolved > 0 && d.totals.total > 0 ? Math.round(d.totals.resolved / d.totals.total * 100) + '%' : '—';
+  document.getElementById('kpiTotalObs').textContent = d.totals.total;
+  document.getElementById('safetyWeekBadge').textContent = lastWk.replace('W','W');
+
+  // Positive rate trend chart
+  if (window.safetyTrendChart) window.safetyTrendChart.destroy();
+  const tCtx = document.getElementById('chartSafetyTrend').getContext('2d');
+  window.safetyTrendChart = new Chart(tCtx, {
+    type: 'line',
+    data: {
+      labels: weeks.map(w => w.replace('2026-W','')),
+      datasets: [{
+        label: 'Positive %',
+        data: weeks.map(w => { const q = d.weekly[w]; return q && q.total > 0 ? Math.round(q.positive / q.total * 100) : 0; }),
+        borderColor: '#16A34A', backgroundColor: 'rgba(22,163,74,0.1)', fill: true, tension: 0.4,
+        pointBackgroundColor: weeks.map(w => { const q = d.weekly[w]; const r = q && q.total > 0 ? q.positive/q.total*100 : 0; return r >= 60 ? '#16A34A' : r >= 45 ? '#CA8A04' : '#DC2626'; })
+      }]
+    },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.parsed.y + '% positive rate' } } },
+      scales: { y: { min: 0, max: 100, title: { display: true, text: 'Positive %' } },
+                x: { title: { display: true, text: 'Week' } } }
+    }
+  });
+
+  // Category pie/doughnut
+  if (window.safetyCatChart) window.safetyCatChart.destroy();
+  const catLabels = Object.keys(d.categories);
+  const catPosRates = catLabels.map(c => {
+    const subs = d.categories[c];
+    let pos = 0, tot = 0;
+    Object.values(subs).forEach(v => { tot += v; });
+    return tot > 0 ? pos : 0;
+  });
+  const catTotals = catLabels.map(c => Object.values(d.categories[c]).reduce((a,b)=>a+b,0));
+  const catColors = ['#2563EB','#DC2626','#16A34A','#CA8A04','#7C3AED','#0891B2'];
+  const cCtx = document.getElementById('chartSafetyCats').getContext('2d');
+  window.safetyCatChart = new Chart(cCtx, {
+    type: 'doughnut',
+    data: { labels: catLabels, datasets: [{ data: catTotals, backgroundColor: catColors }] },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } } } }
+  });
+
+  // Top hazards list
+  const hazHtml = Object.entries(d.top_hazards).slice(0, 8).map(([k,v]) =>
+    `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border)">
+      <span>${k}</span><span style="color:var(--red);font-weight:600">${v}</span>
+    </div>`).join('');
+  document.getElementById('topHazardsList').innerHTML = hazHtml || '<div style="color:var(--muted)">—</div>';
+
+  // STOP WORK table
+  const swHtml = d.stop_work.length > 0
+    ? `<table style="width:100%;border-collapse:collapse;font-size:11px">
+        <tr style="background:var(--surface2);font-weight:600">
+          <td style="padding:6px 8px;border-bottom:1px solid var(--border)">Date</td>
+          <td style="padding:6px 8px;border-bottom:1px solid var(--border)">Category</td>
+          <td style="padding:6px 8px;border-bottom:1px solid var(--border)">Detail</td>
+          <td style="padding:6px 8px;border-bottom:1px solid var(--border)">Resolved</td>
+        </tr>` +
+        d.stop_work.map(e => `<tr>
+          <td style="padding:5px 8px;border-bottom:1px solid var(--border)">${e.date}</td>
+          <td style="padding:5px 8px;border-bottom:1px solid var(--border);color:var(--red);font-weight:600">${e.category}</td>
+          <td style="padding:5px 8px;border-bottom:1px solid var(--border)">${e.detail}…</td>
+          <td style="padding:5px 8px;border-bottom:1px solid var(--border)">${e.resolved === 'Yes' ? '✅' : '⏳'}</td>
+        </tr>`).join('') + '</table>'
+    : '<div style="color:var(--muted);text-align:center;padding:16px">No STOP WORK events</div>';
+  document.getElementById('stopWorkTable').innerHTML = swHtml;
+
+  // Focus areas
+  const fa = [];
+  if (d.categories['Physical'] && d.categories['Physical']['Housekeeping']) {
+    const hk = d.categories['Physical']['Housekeeping'];
+    fa.push(`<div style="margin-bottom:10px">
+      <div style="font-weight:600;color:var(--yellow)">🧹 Housekeeping — Priority 1</div>
+      <div style="color:var(--muted);font-size:12px">${hk} observations | 38% positive rate (below 60% target)</div>
+    </div>`);
+  }
+  if (d.categories['Site Rules/Setup'] && d.categories['Site Rules/Setup']['PPE - Missing / Broken / Incorrect Storage']) {
+    const ppe = d.categories['Site Rules/Setup']['PPE - Missing / Broken / Incorrect Storage'];
+    fa.push(`<div style="margin-bottom:10px">
+      <div style="font-weight:600;color:var(--red)">🪖 PPE Compliance — Priority 2</div>
+      <div style="color:var(--muted);font-size:12px">${ppe} observations | 14% positive rate (CRITICAL)</div>
+    </div>`);
+  }
+  fa.push(`<div style="margin-bottom:10px">
+    <div style="font-weight:600;color:var(--yellow)">⚡ Hazardous Energy</div>
+    <div style="color:var(--muted);font-size:12px">6 observations | 17% positive rate | Electrical cabinets left open</div>
+  </div>`);
+  document.getElementById('focusAreas').innerHTML = fa.join('');
+
+  // Monthly bar chart
+  if (window.safetyMonthlyChart) window.safetyMonthlyChart.destroy();
+  const mKeys = Object.keys(d.months).sort();
+  const mCtx = document.getElementById('chartSafetyMonthly').getContext('2d');
+  window.safetyMonthlyChart = new Chart(mCtx, {
+    type: 'bar',
+    data: {
+      labels: mKeys.map(m => m.replace('2025-','25/').replace('2026-','26/')),
+      datasets: [{
+        label: 'Total Obs',
+        data: mKeys.map(m => d.months[m].total),
+        backgroundColor: mKeys.map(m => { const r = d.months[m]; return r.total > 0 && r.positive/r.total >= 0.6 ? '#16A34A' : '#CA8A04'; })
+      }]
+    },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, title: { display: true, text: 'Observations' } } } }
+  });
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  fetch('assets/safety_data.json').then(r => r.json()).then(data => {
+    window.SAFETY_DATA = data;
+    renderSafety();
+  }).catch(e => console.warn('Safety data not loaded:', e));
+});
 </script>
 </body>
 </html>
