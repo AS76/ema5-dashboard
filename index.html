@@ -603,17 +603,6 @@ function renderGantt() {
   const items = DATA.siteProgress.filter(r => r['Planned Start'] || r['Planned Finish']).slice(0, 12);
   if (!items.length) { container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">No schedule data available</div>'; return; }
 
-  // Date axis
-  const days = Math.ceil((maxDate - minDate) / 86400000);
-  const axisSteps = days <= 30 ? 5 : days <= 90 ? 10 : 30;
-  let axisHtml = '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:8px;padding-right:8px">';
-  for (let i = 0; i <= axisSteps; i++) {
-    const d = new Date(minDate.getTime() + (maxDate - minDate) * i / axisSteps);
-    axisHtml += '<span>' + d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'}) + '</span>';
-  }
-  axisHtml += '</div>';
-  html = axisHtml + html;
-
   // Build date range from items
   const allDates = [];
   items.forEach(r => {
@@ -626,6 +615,19 @@ function renderGantt() {
   const minDate = new Date(Math.min(...allDates));
   const maxDate = new Date(Math.max(...allDates));
   const rangeMs = maxDate - minDate || 1;
+
+  // Date axis (uses minDate/maxDate now that they are defined)
+  const days = Math.ceil((maxDate - minDate) / 86400000);
+  const axisSteps = days <= 30 ? 5 : days <= 90 ? 10 : 30;
+  let axisHtml = '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:8px;padding-right:8px">';
+  for (let i = 0; i <= axisSteps; i++) {
+    const d = new Date(minDate.getTime() + (maxDate - minDate) * i / axisSteps);
+    axisHtml += '<span>' + d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'}) + '</span>';
+  }
+  axisHtml += '</div>';
+  let html = axisHtml;
+
+  // old date-range calc block removed — was using vars before definition
 
   const toPercent = (d) => ((d - minDate) / rangeMs * 100).toFixed(2);
   const toWidth = (d1, d2) => Math.max(1, (new Date(d2) - new Date(d1)) / rangeMs * 100).toFixed(2);
