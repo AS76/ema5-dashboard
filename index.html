@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="cache-bust" content="v8_1776835868">
+  <meta name="cache-bust" content="v9_1776837600">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EMA5 Operations</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -495,12 +495,14 @@ async function loadAll() {
   try {
     const [dl, wd, sp, rp, ll] = await Promise.all([
       fetchJSON('daily_log.json'),
-      fetchJSON('work_days.json'),
+      fetchJSON('work_days_aggregate.json'),
       fetchJSON('site_progress.json'),
       fetchJSON('resource_plan.json'),
       fetchJSON('lessons_learned.json')
     ]);
     DATA.dailyLog = dl;
+    // work_days_aggregate has pre-computed day totals — used for Dashboard KPIs/charts
+    // Individual records loaded lazily for Team page OT%
     DATA.workDays = wd;
     DATA.siteProgress = sp;
     DATA.resourcePlan = rp;
@@ -579,6 +581,18 @@ function esc(s) {
 
 // ── Compute ──
 function computeShiftsByDate(rows) {
+  // Handle pre-aggregated format (work_days_aggregate.json)
+  if (rows.length > 0 && rows[0].total !== undefined) {
+    const map = {};
+    rows.forEach(r => {
+      const d = parseDateDMY(r.date);
+      if (!d) return;
+      const k = d.toISOString().slice(0, 10);
+      map[k] = { total: r.total || 0, morning: r.morning || 0, afternoon: r.afternoon || 0, night: r.night || 0, open: r.open || 0 };
+    });
+    return map;
+  }
+  // Individual records (original format)
   const map = {};
   rows.forEach(r => {
     const d = parseDateDMY(r.Date || r.date);
