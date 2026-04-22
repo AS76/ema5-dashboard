@@ -1033,18 +1033,17 @@ function renderSafety() {
   // Category pie/doughnut
   if (window.safetyCatChart) window.safetyCatChart.destroy();
   const catLabels = Object.keys(d.categories);
+  // Each category has _total and _positive meta fields
+  const catTotals = catLabels.map(c => d.categories[c]['_total'] || 0);
   const catPosRates = catLabels.map(c => {
-    const subs = d.categories[c];
-    let pos = 0, tot = 0;
-    Object.values(subs).forEach(v => { tot += v; });
-    return tot > 0 ? pos : 0;
+    const ct = d.categories[c];
+    return ct['_total'] > 0 ? Math.round(ct['_positive'] / ct['_total'] * 100) : 0;
   });
-  const catTotals = catLabels.map(c => Object.values(d.categories[c]).reduce((a,b)=>a+b,0));
-  const catColors = ['#2563EB','#DC2626','#16A34A','#CA8A04','#7C3AED','#0891B2'];
+  const catColors = ['#DC2626','#2563EB','#16A34A','#CA8A04','#7C3AED','#0891B2'];
   const cCtx = document.getElementById('chartSafetyCats').getContext('2d');
   window.safetyCatChart = new Chart(cCtx, {
     type: 'doughnut',
-    data: { labels: catLabels, datasets: [{ data: catTotals, backgroundColor: catColors }] },
+    data: { labels: catLabels.map(l => l + ' (' + catPosRates[catLabels.indexOf(l)] + '%)'), datasets: [{ data: catTotals, backgroundColor: catColors }] },
     options: { responsive: true, maintainAspectRatio: false,
       plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } } } }
   });
