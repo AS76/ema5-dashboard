@@ -285,6 +285,7 @@
         <div class="kpi-label">⬤ Headcount Today</div>
         <div class="kpi-value blue" id="kpi-hc">—</div>
         <div class="kpi-sub" id="kpi-hc-sub">—</div>
+        <div id="kpi-hc-fresh" style="font-size:10px;color:var(--muted);margin-top:4px"></div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">⬤ Total Shifts Recorded</div>
@@ -292,9 +293,9 @@
         <div class="kpi-sub">4,587 records</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">⬤ Downtime (30d)</div>
+        <div class="kpi-label">⬤ Total Downtime (Project)</div>
         <div class="kpi-value red" id="kpi-dt">—</div>
-        <div class="kpi-sub" id="kpi-dt-sub">Last 30 days</div>
+        <div class="kpi-sub" id="kpi-dt-sub">Since 5 Jan 2026</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">⬤ Journal Entries</div>
@@ -303,35 +304,32 @@
       </div>
     </div>
 
-    <!-- Row 2: HC 14d + Plan vs Actual -->
-    <div class="charts-grid-2">
-      <div class="chart-card">
-        <div class="chart-title">📊 Headcount — Last 14 Days</div>
-        <div class="chart-wrap"><canvas id="chartHC"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-title">📊 Planned vs Actual (Weekly)</div>
-        <div class="chart-wrap"><canvas id="chartPlanActual"></canvas></div>
-      </div>
+    <!-- Headcount — Full Width -->
+    <div class="chart-card" style="margin-bottom:14px">
+      <div class="chart-title">📊 Headcount — Last 14 Days</div>
+      <div style="height:240px;position:relative"><canvas id="chartHC"></canvas></div>
     </div>
 
-    <!-- Row 3: Delays + Progress -->
-    <div class="charts-grid-2">
-      <div class="chart-card">
-        <div class="chart-title">📉 Delays by Cause (30d)</div>
-        <div class="chart-wrap"><canvas id="chartDelay"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-title">📈 Site Progress Overview</div>
-        <div class="chart-wrap"><canvas id="chartProgress"></canvas></div>
-      </div>
+    <!-- Planned vs Actual — Full Width -->
+    <div class="chart-card" style="margin-bottom:14px">
+      <div class="chart-title">📊 Planned vs Actual (Weekly)</div>
+      <div style="height:240px;position:relative"><canvas id="chartPlanActual"></canvas></div>
     </div>
 
-    <!-- Row 4: Gantt placeholder -->
-    <div class="gantt-card">
-      <div class="gantt-title">📅 Site Progress vs Time Schedule — Dematic Works</div>
-      <div id="ganttContainer">
-        <div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">Loading schedule data…</div>
+    <!-- Delays by Cause — Full Project Period -->
+    <div class="chart-card" style="margin-bottom:14px">
+      <div class="chart-title">📉 Delays by Cause — Project to Date</div>
+      <div class="chart-wrap"><canvas id="chartDelay"></canvas></div>
+    </div>
+
+    <!-- Gantt — replace old placeholder with new interactive Gantt -->
+    <div class="chart-card" style="margin-bottom:20px">
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px">
+        <div style="font-size:13px;font-weight:600">📅 Project Gantt — Time Schedule</div>
+        <div style="font-size:11px;color:var(--muted)">Scroll horizontally to navigate</div>
+      </div>
+      <div id="ganttScrollContainer" style="overflow-x:auto;overflow-y:hidden;background:var(--surface2);border-radius:8px;padding:12px;min-height:200px">
+        <div id="ganttInner"></div>
       </div>
     </div>
 
@@ -466,6 +464,8 @@ async function loadAll() {
     DATA.siteProgress = sp;
     DATA.resourcePlan = rp;
     DATA.lessons = ll || [];
+    // Lazy-load time_schedule for Gantt
+    fetchJSON('time_schedule.json').then(ts => { window.TIME_SCHEDULE = ts; renderGantt(); }).catch(() => { window.TIME_SCHEDULE = []; renderGantt(); });
     DATA.loaded = true;
     document.getElementById('syncTime').textContent = 'Synced ' + new Date().toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'});
     renderDashboard();
@@ -544,23 +544,35 @@ function renderKPIs() {
   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
   const todayHC = shifts[today] || shifts[yesterday] || { total:0, morning:0, afternoon:0, night:0, open:0 };
 
-  // HC Today
+  // HC Today + data freshness indicator
   document.getElementById('kpi-hc').textContent = todayHC.total;
   let hcSub = `Mattina <b>${todayHC.morning}</b> · Pomeriggio <b>${todayHC.afternoon}</b> · Notte <b>${todayHC.night}</b>`;
   if (todayHC.open) hcSub += `<br><span class="warn">⚠ ${todayHC.open} non hanno timbrato l'uscita</span>`;
   document.getElementById('kpi-hc-sub').innerHTML = hcSub;
+  const freshEl = document.getElementById('kpi-hc-fresh');
+  if (todayHC.total === 0) {
+    const yesterdayHC = shifts[yesterday] || { total: 0 };
+    if (yesterdayHC.total > 0) {
+      const yDate = new Date(yesterday + 'T00:00:00');
+      freshEl.innerHTML = `⏳ No check-in recorded today — last data: <b>${yDate.toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'})}</b>`;
+    } else {
+      freshEl.innerHTML = `⚠ No data for yesterday either`;
+    }
+  } else {
+    freshEl.innerHTML = '';
+  }
 
   // Work days on site
   document.getElementById('kpi-wd').textContent = DATA.workDays.length.toLocaleString();
 
-  // Downtime last 30 days
-  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 30);
-  let totalH = 0;
+  // Downtime — total from project start (5 Jan 2026)
+  let totalDowntime = 0;
+  const projStart = new Date('2026-01-05');
   DATA.dailyLog.forEach(r => {
     const d = parseDateDMY(r.Date || r.date);
-    if (d && d >= cutoff) totalH += Math.min(delayHours(r.Delays || r.delays), 24);
+    if (d && d >= projStart) totalDowntime += Math.min(delayHours(r.Delays || r.delays), 24);
   });
-  document.getElementById('kpi-dt').textContent = totalH + 'h';
+  document.getElementById('kpi-dt').textContent = totalDowntime + 'h';
 
   // Journal entries
   document.getElementById('kpi-je').textContent = DATA.dailyLog.length;
@@ -583,6 +595,12 @@ function renderCharts() {
   const hcN = sortedDates.map(d => shifts[d]?.night || 0);
 
   if (charts.hc) charts.hc.destroy();
+  // Moving average (7-day)
+  const hcTotals = sortedDates.map(d => (shifts[d]?.morning||0) + (shifts[d]?.afternoon||0) + (shifts[d]?.night||0));
+  const ma = hcTotals.map((_, i, arr) => {
+    const slice = arr.slice(Math.max(0, i-6), i+1);
+    return Math.round(slice.reduce((a,b) => a+b, 0) / slice.length);
+  });
   charts.hc = new Chart(document.getElementById('chartHC'), {
     type: 'bar',
     data: {
@@ -590,12 +608,27 @@ function renderCharts() {
       datasets: [
         { label: 'Morning', data: hcM, backgroundColor: 'rgba(37,99,235,0.7)', borderRadius: 3 },
         { label: 'Afternoon', data: hcA, backgroundColor: 'rgba(234,179,8,0.7)', borderRadius: 3 },
-        { label: 'Night', data: hcN, backgroundColor: 'rgba(124,58,237,0.7)', borderRadius: 3 }
+        { label: 'Night', data: hcN, backgroundColor: 'rgba(124,58,237,0.7)', borderRadius: 3 },
+        { label: 'Trend (7d MA)', data: ma, type: 'line', borderColor: '#F59E0B', backgroundColor: 'transparent', borderWidth: 2, borderDash: [5,3], pointRadius: 3, pointBackgroundColor: '#F59E0B', tension: 0.4, order: 0 }
       ]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } },
+      plugins: {
+        legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } },
+        tooltip: {
+          mode: 'index', intersect: false,
+          callbacks: {
+            label: ctx => {
+              const idx = ctx.dataIndex;
+              const total = (hcM[idx]||0) + (hcA[idx]||0) + (hcN[idx]||0);
+              let label = ctx.dataset.label || '';
+              if (label === 'Trend (7d MA)') return 'Trend: ' + ctx.parsed.y;
+              return label + ': ' + ctx.parsed.y + ' (Total: ' + total + ')';
+            }
+          }
+        }
+      },
       scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }
     }
   });
@@ -622,13 +655,10 @@ function renderCharts() {
     });
   }
 
-  // Delays by cause
+  // Delays by cause — full project period (no 30d cutoff)
   if (charts.delay) charts.delay.destroy();
-  const cutoff30 = new Date(); cutoff30.setDate(cutoff30.getDate() - 30);
   const byCause = {};
   DATA.dailyLog.forEach(r => {
-    const d = parseDateDMY(r.Date || r.date);
-    if (!d || d < cutoff30) return;
     const h = delayHours(r.Delays || r.delays);
     if (h > 0) {
       const cause = String(r.Delays || r.delays || '').trim().split('.')[0].trim() || 'Other';
@@ -666,38 +696,42 @@ function renderCharts() {
 }
 
 function renderGantt() {
-  const container = document.getElementById('ganttContainer');
-  const items = DATA.siteProgress.filter(r => r['Planned Start'] || r['Planned Finish']).slice(0, 12);
-  if (!items.length) { container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">No schedule data available</div>'; return; }
-
-  // Build date range from items
+  const inner = document.getElementById('ganttInner');
+  if (!inner) return;
+  if (!window.TIME_SCHEDULE || !window.TIME_SCHEDULE.length) {
+    inner.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:40px">Schedule data not yet available — pending integration</div>';
+    return;
+  }
+  const items = window.TIME_SCHEDULE.filter(r => r['Planned Start'] || r['Planned Finish']).slice(0, 20);
+  if (!items.length) { inner.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:40px">No schedule items with dates found</div>'; return; }
   const allDates = [];
-  items.forEach(r => {
-    ['Planned Start','Planned Finish','Actual Start','Actual Finish'].forEach(f => {
-      const d = parseDateDMY(r[f]);
-      if (d) allDates.push(d.getTime());
-    });
-  });
-  if (!allDates.length) { container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">No valid dates in schedule</div>'; return; }
+  items.forEach(r => { ['Planned Start','Planned Finish','Actual Start','Actual Finish'].forEach(f => { const d = parseDateDMY(r[f]); if (d) allDates.push(d.getTime()); }); });
+  if (!allDates.length) { inner.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:40px">No valid dates in schedule</div>'; return; }
   const minDate = new Date(Math.min(...allDates));
   const maxDate = new Date(Math.max(...allDates));
   const rangeMs = maxDate - minDate || 1;
-
-  // Date axis (uses minDate/maxDate now that they are defined)
-  const days = Math.ceil((maxDate - minDate) / 86400000);
-  const axisSteps = days <= 30 ? 5 : days <= 90 ? 10 : 30;
-  let axisHtml = '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:8px;padding-right:8px">';
-  for (let i = 0; i <= axisSteps; i++) {
-    const d = new Date(minDate.getTime() + (maxDate - minDate) * i / axisSteps);
-    axisHtml += '<span>' + d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'}) + '</span>';
+  const totalDays = Math.ceil(rangeMs / 86400000);
+  // Month labels row
+  const monthMap = {};
+  items.forEach(r => { ['Planned Start','Planned Finish','Actual Start','Actual Finish'].forEach(f => {
+    const d = parseDateDMY(r[f]); if (d) { const mk = d.getFullYear() + '-' + d.getMonth(); if (!monthMap[mk]) monthMap[mk] = d; }
+  }); });
+  let monthLabelsHtml = '<div style="display:flex;font-size:10px;color:var(--muted);margin-bottom:4px;position:relative;height:16px">';
+  Object.entries(monthMap).sort().forEach(([mk, d]) => {
+    const leftPct = ((d - minDate) / rangeMs * 100).toFixed(2);
+    monthLabelsHtml += '<span style="position:absolute;left:' + leftPct + '%;font-weight:600;color:var(--text)">' + d.toLocaleDateString('en-GB',{month:'short',year:'2-digit'}) + '</span>';
+  });
+  monthLabelsHtml += '</div>';
+  // Week grid lines
+  let gridHtml = '<div style="display:flex;align-items:stretch;min-height:40px;position:relative">';
+  const numWeeks = Math.ceil(totalDays / 7);
+  for (let i = 0; i <= numWeeks; i++) {
+    const d = new Date(minDate.getTime() + i * 7 * 86400000);
+    const leftPct = ((d - minDate) / rangeMs * 100).toFixed(2);
+    gridHtml += '<div style="position:absolute;left:' + leftPct + '%;top:0;bottom:0;width:1px;background:var(--border);z-index:0"></div>';
   }
-  axisHtml += '</div>';
-  html = axisHtml;
-
-  const toPercent = (d) => ((d - minDate) / rangeMs * 100).toFixed(2);
-  const toWidth = (d1, d2) => Math.max(1, (new Date(d2) - new Date(d1)) / rangeMs * 100).toFixed(2);
-
-  html = '';
+  gridHtml += '</div>';
+  let rowsHtml = '';
   items.forEach(r => {
     const desc = esc(r.Description || r.description || '');
     const plannedStart = parseDateDMY(r['Planned Start']);
@@ -705,25 +739,22 @@ function renderGantt() {
     const actualStart = parseDateDMY(r['Actual Start']);
     const actualFinish = parseDateDMY(r['Actual Finish']);
     const progress = parseInt(r.Progress || r.progress || 0);
-    const pct = progress >= 80 ? 'var(--green)' : progress >= 40 ? 'var(--yellow)' : 'var(--red)';
-
+    const toPercent = (d) => ((d - minDate) / rangeMs * 100).toFixed(2);
+    const toWidth = (d1, d2) => Math.max(1, (d2 - d1) / rangeMs * 100).toFixed(2);
     let barsHtml = '';
     if (plannedStart && plannedFinish) {
-      barsHtml += `<div class="gantt-bar planned" style="left:${toPercent(plannedStart)}%;width:${toWidth(plannedStart, plannedFinish)}%" title="Planned: ${r['Planned Start']} → ${r['Planned Finish']}"></div>`;
+      const l = toPercent(plannedStart), w = toWidth(plannedStart, plannedFinish);
+      barsHtml += '<div style="position:absolute;left:' + l + '%;width:' + w + '%;top:8px;height:16px;background:rgba(37,99,235,0.4);border:1px solid rgba(37,99,235,0.8);border-radius:3px;z-index:1" title="Planned: ' + (r['Planned Start'] || '') + ' → ' + (r['Planned Finish'] || '') + '"><span style="position:absolute;right:3px;top:1px;font-size:9px;font-weight:700;color:rgba(37,99,235,1)">' + progress + '%</span></div>';
     }
     if (actualStart && actualFinish) {
-      barsHtml += `<div class="gantt-bar actual" style="left:${toPercent(actualStart)}%;width:${toWidth(actualStart, actualFinish)}%;top:60%" title="Actual: ${r['Actual Start']} → ${r['Actual Finish']}"></div>`;
+      const l = toPercent(actualStart), w = toWidth(actualStart, actualFinish);
+      barsHtml += '<div style="position:absolute;left:' + l + '%;width:' + w + '%;top:28px;height:14px;background:rgba(22,163,74,0.5);border:1px solid rgba(22,163,74,0.9);border-radius:3px;z-index:2" title="Actual: ' + (r['Actual Start'] || '') + ' → ' + (r['Actual Finish'] || '') + '"></div>';
     }
-
-    html += `<div class="gantt-row">
-      <div class="gantt-label" title="${desc}">${desc}</div>
-      <div class="gantt-bar-wrap">
-        ${barsHtml}
-        <div style="position:absolute;right:0;top:50%;transform:translateY(-50%);font-size:11px;font-weight:700;color:${pct}">${progress}%</div>
-      </div>
-    </div>`;
+    rowsHtml += '<div style="position:relative;min-height:48px;margin-bottom:8px;border-bottom:1px solid var(--border);padding-bottom:6px">' +
+      '<div style="font-size:11px;font-weight:600;color:var(--text);margin-bottom:4px">' + desc + '</div>' +
+      '<div style="position:relative;height:48px">' + barsHtml + '</div></div>';
   });
-  container.innerHTML = html;
+  inner.innerHTML = monthLabelsHtml + gridHtml + rowsHtml;
 }
 
 // ── Render Journal ──
@@ -1102,6 +1133,9 @@ function showView(name) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById('view-' + name).classList.add('active');
   document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'dashboard') {
+    renderGantt();
+  }
   const titles = { dashboard: 'Operations', team: 'Team', journal: 'Daily Journal', progress: 'Site Progress', safety: 'Safety', lessons: 'Lessons' };
   document.getElementById('viewTitle').textContent = titles[name];
   window.scrollTo(0, 0);
