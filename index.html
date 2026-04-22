@@ -357,6 +357,72 @@
     </div>
   </div>
 
+  <!-- === SAFETY === -->
+  <div id="view-safety" class="view" style="display:none">
+    <div class="section-header" style="margin-bottom:20px;padding:16px 20px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius)">
+      <img src="assets/tgw-logo.png" alt="TGW" style="height:36px;margin-right:12px;border-radius:4px;vertical-align:middle">
+      <div style="display:inline-block;vertical-align:middle">
+        <div style="font-size:15px;font-weight:700;color:var(--text)">EMA5 — Safety Dashboard</div>
+        <div style="font-size:11px;color:var(--muted)">Amazon Kettering | TGW Group | Hazard Observations</div>
+      </div>
+      <div id="safetyWeekBadge" style="margin-left:auto;font-weight:700;font-size:20px;color:var(--accent)">W16</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+      <div class="kpi-card">
+        <div class="kpi-value" id="kpiPosRate" style="color:var(--green)">74%</div>
+        <div class="kpi-label">Positive Rate</div>
+        <div class="kpi-sub" id="kpiPosTrend">↑ best week</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value" id="kpiStopWork">0</div>
+        <div class="kpi-label">STOP WORK</div>
+        <div class="kpi-sub">this week</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value" id="kpiResolution">92%</div>
+        <div class="kpi-label">Resolution</div>
+        <div class="kpi-sub">overall</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value" id="kpiTotalObs">720</div>
+        <div class="kpi-label">Observations</div>
+        <div class="kpi-sub">YTD</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+      <div class="chart-card">
+        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px">📈 Weekly Positive Rate</div>
+        <div style="height:180px;position:relative"><canvas id="chartSafetyTrend"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px">🍩 By Category</div>
+        <div style="height:180px;position:relative"><canvas id="chartSafetyCats"></canvas></div>
+      </div>
+    </div>
+
+    <div class="chart-card" style="margin-bottom:16px">
+      <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px">🔴 Top Hazards (non-positive observations)</div>
+      <div id="topHazardsList" style="font-size:12px;line-height:2"></div>
+    </div>
+
+    <div class="chart-card" style="margin-bottom:16px">
+      <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px">🛑 STOP WORK Register — 2026 YTD</div>
+      <div id="stopWorkTable" style="font-size:12px"></div>
+    </div>
+
+    <div class="chart-card" style="margin-bottom:16px">
+      <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px">⚠️ Focus Areas</div>
+      <div id="focusAreas" style="font-size:13px;line-height:2"></div>
+    </div>
+
+    <div class="chart-card" style="margin-bottom:20px">
+      <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px">📅 Monthly Volume</div>
+      <div style="height:140px;position:relative"><canvas id="chartSafetyMonthly"></canvas></div>
+    </div>
+  </div>
+
   <!-- === LESSONS === -->
   <div class="view" id="view-lessons">
     <div class="ll-controls" style="margin-bottom:20px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
@@ -676,11 +742,17 @@ function renderJournal(monthKey = 'all') {
 
   // Month filter
   const filterEl = document.getElementById('monthFilter');
-  filterEl.innerHTML = `<span class="journal-filter-label">Month:</span>` +
+  filterEl.innerHTML = `<div style="font-size:11px;color:var(--muted);margin-bottom:8px;padding:0 4px">
+    <span style="background:var(--green-light);color:var(--green);padding:2px 6px;border-radius:4px;font-weight:600">HC</span>
+    Head Count — presenze giornaliere dal cartellino (morning + afternoon + night)
+    &nbsp;|&nbsp;
+    <span style="background:var(--yellow-light);color:var(--yellow);padding:2px 6px;border-radius:4px;font-weight:600">⚠</span>
+    numero persone che non hanno timbrato l'uscita
+  </div><span class="journal-filter-label">Month:</span>` +
     monthKeys.map(k => `<div class="pill ${k === current ? 'active' : ''}" onclick="setJournalMonth('${k}', this)">${months[k]}</div>`).join('') +
     `<div class="pill ${monthKey === 'all' ? 'active' : ''}" onclick="setJournalMonth('all', this)">All time</div>`;
 
-  const filtered = monthKey === 'all' ? DATA.dailyLog : DATA.dailyLog.filter(r => {
+  const filtered = (monthKey === 'all' || monthKey === null) ? DATA.dailyLog : DATA.dailyLog.filter(r => {
     const d = parseDateDMY(r.Date || r.date);
     if (!d) return false;
     const k = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
@@ -724,8 +796,7 @@ function renderJournal(monthKey = 'all') {
       // Badges
       let badges = '';
       if (sh.total > 0) {
-        const warnClass = sh.open > 0 ? 'hc-warn' : 'hc';
-        badges += `<span class="bj-badge ${warnClass}">👷 HC ${sh.total}${sh.open > 0 ? ` ⚠ ${sh.open}` : ''}</span>`;
+        badges += `<span class="bj-badge hc">👷 HC ${sh.total}${sh.open > 0 ? ` <span style="color:var(--yellow)">(${sh.open} open)</span>` : ''}</span>`;
       }
       if (section) {
         const secClass = section.includes('Dematic') ? 'section-dematic' : section.includes('TGW') ? 'section-tgw' : 'section';
@@ -857,11 +928,11 @@ function renderTeam() {
   });
   const ordered = [...DEPT_ORDER.filter(d => byDept[d]), ...Object.keys(byDept).filter(d => !DEPT_ORDER.includes(d))];
   let html = '';
-  html += `<div class="dept-header-labels">
+  html += `<div class="dept-header-labels" style="display:grid;grid-template-columns:1fr 1.2fr 1fr 60px 60px;padding:6px 12px;font-size:11px;font-weight:600;color:var(--muted);border-bottom:1px solid var(--border)">
     <span>Name</span>
     <span>Role</span>
     <span>Company</span>
-    <span>Days</span>
+    <span>Days *</span>
     <span>OT%</span>
   </div>`;
   ordered.forEach(dept => {
@@ -876,15 +947,15 @@ function renderTeam() {
       const name = `${p['First Name']||''} ${p['Last Name']||''}`.trim();
       const stats = personStats[name] || { days: new Set(), totalH: 0 };
       const dayCount = stats.days.size;
-      const otRate = dayCount > 0 ? ((stats.totalH - dayCount * 10.5) / (dayCount * 10.5)) * 100 : 0;
-      const otClass = otRate > 0 ? 'over' : '';
-      const otStr = otRate >= 0 ? `+${otRate.toFixed(1)}%` : `${otRate.toFixed(1)}%`;
-      html += `<div class="person-row">
+      const otVal = Math.max(0, dayCount > 0 ? ((stats.totalH - dayCount * 10.5) / (dayCount * 10.5)) * 100 : 0);
+      const otClass = otVal > 0 ? 'over' : '';
+      const otStr = otVal >= 0 ? `+${otVal.toFixed(1)}%` : `${otVal.toFixed(1)}%`;
+      html += `<div class="person-row" style="display:grid;grid-template-columns:1fr 1.2fr 1fr 60px 60px;padding:7px 12px;border-bottom:1px solid var(--border);align-items:center">
         <div class="person-name">${esc(name)}</div>
         <div class="person-qual">${esc(p.Qualification || '')}</div>
         <div class="person-company">${esc(p.Company || '')}</div>
-        <div class="person-days">${dayCount}</div>
-        <div class="person-ot ${otClass}">${otStr}</div>
+        <div class="person-days" title="Days of presence from project start (5 January 2026)">${dayCount}</div>
+        <div class="person-ot ${otClass}" title="Overtime % vs standard hours">${otStr}</div>
       </div>`;
     });
     html += `</div></div>`;
@@ -897,6 +968,45 @@ function renderProgress() {
   const container = document.getElementById('progressList');
   const items = DATA.siteProgress.sort((a, b) => (parseInt(b.Progress||b.progress||0)) - (parseInt(a.Progress||a.progress||0)));
   if (!items.length) { container.innerHTML = '<div class="loading">No data.</div>'; return; }
+
+  // Accumulated delay & delivery date summary
+  let totalDelay = 0;
+  let maxActualFinish = null;
+  items.forEach(r => {
+    const pfStr = r['Planned Finish'] || '';
+    const afStr = r['Actual Finish'] || '';
+    if (afStr) {
+      const afParts = afStr.split('/');
+      const afDate = new Date(afParts[2] + '-' + afParts[1] + '-' + afParts[0]);
+      if (!isNaN(afDate.getTime())) {
+        if (!maxActualFinish || afDate > maxActualFinish) maxActualFinish = afDate;
+      }
+    }
+    if (pfStr && afStr) {
+      const pfParts = pfStr.split('/');
+      const afParts = afStr.split('/');
+      const pfDate = new Date(pfParts[2] + '-' + pfParts[1] + '-' + pfParts[0]);
+      const afDate = new Date(afParts[2] + '-' + afParts[1] + '-' + afParts[0]);
+      if (!isNaN(pfDate.getTime()) && !isNaN(afDate.getTime())) {
+        const diffDays = Math.round((afDate - pfDate) / 86400000);
+        if (diffDays > 0) totalDelay += diffDays;
+      }
+    }
+  });
+
+  const summaryHtml = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+    <div class="kpi-card">
+      <div class="kpi-label">Accumulated Delay (days)</div>
+      <div class="kpi-value" id="progressDelayDays" style="color:${totalDelay > 0 ? 'var(--yellow)' : 'var(--green)'}">${totalDelay > 0 ? '+' + totalDelay : totalDelay}</div>
+      <div class="kpi-sub">sum of all delay deltas</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Delivery Date</div>
+      <div class="kpi-value" id="progressDelivery" style="font-size:18px">${maxActualFinish ? maxActualFinish.toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'}) : '—'}</div>
+      <div class="kpi-sub">vs customer committed date</div>
+    </div>
+  </div>`;
+
   let html = '';
   items.forEach(r => {
     const progress = parseInt(r.Progress || r.progress || 0);
@@ -906,7 +1016,20 @@ function renderProgress() {
     const assigned = r['Assigned To'] || r.assigned_to || '';
     const plannedStart = r['Planned Start'] || '';
     const plannedFinish = r['Planned Finish'] || '';
+    const actualFinish = r['Actual Finish'] || '';
     const delay = r['Expected Delay'] || r.expected_delay || '';
+    let delayDelta = '';
+    if (plannedFinish && actualFinish) {
+      const pfParts = plannedFinish.split('/');
+      const afParts = actualFinish.split('/');
+      const pfDate = new Date(pfParts[2] + '-' + pfParts[1] + '-' + pfParts[0]);
+      const afDate = new Date(afParts[2] + '-' + afParts[1] + '-' + afParts[0]);
+      if (!isNaN(pfDate.getTime()) && !isNaN(afDate.getTime())) {
+        const diffDays = Math.round((afDate - pfDate) / 86400000);
+        if (diffDays > 0) delayDelta = `<span style="color:var(--red)">Δ +${diffDays}d</span>`;
+        else if (diffDays < 0) delayDelta = `<span style="color:var(--green)">Δ ${diffDays}d</span>`;
+      }
+    }
     html += `<div class="progress-item">
       <div class="progress-header">
         <div class="progress-desc">${esc(r.Description || r.description || '')}</div>
@@ -918,17 +1041,19 @@ function renderProgress() {
         ${assigned ? `<span>→ ${esc(assigned)}</span>` : ''}
         ${plannedStart ? `<span>Start: ${esc(plannedStart)}</span>` : ''}
         ${plannedFinish ? `<span>Finish: ${esc(plannedFinish)}</span>` : ''}
+        ${actualFinish ? `<span style="color:var(--green)">Real: ${esc(actualFinish)}</span>` : ''}
+        ${delayDelta ? ` ${delayDelta}` : ''}
         ${delay && delay !== '0 days' ? `<span style="color:var(--red)">⚠ ${esc(delay)}</span>` : ''}
       </div>
     </div>`;
   });
-  container.innerHTML = html;
+  container.innerHTML = summaryHtml + html;
 }
 
 // ── Navigation ──
 function renderLessons() {
   const container = document.getElementById('ll-table');
-  if (!DATA.lessons || !DATA.lessons.length) {
+  if (!DATA.lessons || !(DATA.lessons.entries && DATA.lessons.entries.length)) {
     container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:40px">No lessons data</div>';
     return;
   }
@@ -956,21 +1081,20 @@ function filterLL(filter) {
     container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:30px">No entries match this filter</div>';
     return;
   }
+  const priorityColors = { 'Highest': '#DC2626', 'High': '#F97316', 'To-do': '#6B7280' };
   const priorityClass = p => p === 'Highest' ? 'highest' : p === 'High' ? 'high' : p === 'Medium' ? 'medium' : p === 'To-do' ? 'todo' : 'low';
-  container.innerHTML = filtered.map(e => `
-    <div class="ll-row">
-      <div class="ll-title">
-        <span class="ll-priority ${priorityClass(e.priority)}">${e.priority}</span>
-        ${e.title}
-        <span style="float:right;font-size:11px;color:var(--muted);font-weight:400">${e.status}</span>
+  container.innerHTML = filtered.map(e => {
+    const pc = priorityColors[e.priority] || '#6B7280';
+    return `<div style="margin-bottom:12px;padding:14px 16px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);border-left:4px solid ${pc}">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span style="background:${pc};color:white;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px">${esc(e.priority)}</span>
+        <span style="font-size:11px;color:var(--muted)">${esc(e.status)}</span>
+        ${e.assignee ? '<span style="margin-left:auto;font-size:11px;color:var(--muted)">→ ' + esc(e.assignee) + '</span>' : ''}
       </div>
-      ${e.description ? '<div class="ll-desc">' + e.description + '</div>' : ''}
-      <div class="ll-meta">
-        ${e.assignee ? '<span class="ll-assignee">&#9679; ' + e.assignee + '</span>' : ''}
-        ${e.reporter ? '<span>&#9679; Reported by ' + e.reporter + '</span>' : ''}
-      </div>
-    </div>
-  `).join('');
+      <div style="font-weight:600;color:var(--text);margin-bottom:4px">${esc(e.title)}</div>
+      ${e.description ? '<div style="font-size:12px;color:var(--muted);margin-top:4px">'+esc(e.description)+'</div>' : ''}
+    </div>`;
+  }).join('');
 }
 
 function showView(name) {
