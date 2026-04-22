@@ -387,7 +387,7 @@ async function fetchJSON(path) {
 
 async function loadAll() {
   try {
-    const [dl, wd, sp, rp] = await Promise.all([
+    const [dl, wd, sp, rp, ll] = await Promise.all([
       fetchJSON('daily_log.json'),
       fetchJSON('work_days.json'),
       fetchJSON('site_progress.json'),
