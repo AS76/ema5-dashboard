@@ -538,12 +538,39 @@ function parseDateDMY(s) {
 
 function delayHours(text) {
   if (!text) return 0;
-  // Replace HH:MM timestamps with placeholder to avoid misreading as hours
-  const cleaned = String(text).replace(/\d{1,2}:\d{2}(?:\d{2})?/g, 'TEMP_TIME');
+  const original = String(text);
   let h = 0;
-  const m = cleaned.match(/(\d+(?:\.\d+)?)\s*h(?!ou)/gi);
-  if (m) h += m.reduce((s, x) => s + parseFloat(x), 0);
-  return Math.round(h * 10) / 10;
+
+  // 1a. Explicit Xh patterns (e.g. "1h", "3h", "1.5h", "3h just for sorter")
+  const explicit = original.match(/(\d+(?:\.\d+)?)\s*h(?!ou|ly)/gi);
+  if (explicit) h += explicit.reduce((s, x) => s + parseFloat(x), 0);
+
+  // 1b. Word-form hours (e.g. "1 hour delay", "3 hours lost", "half hour")
+  const wordHours = original.match(/(\d+(?:\.\d+)?)\s+hour(s)?\b/gi);
+  if (wordHours) h += wordHours.reduce((s, x) => s + parseFloat(x.replace(/\s*hour(s)?/i,'')), 0);
+  if (/half\s*hour/i.test(original)) h += 0.5;
+  // 1c. Minutes (e.g. "30 mins", "30 minutes")
+  const mins = original.match(/(\d+(?:\.\d+)?)\s*min(utes)?/gi);
+  if (mins) h += mins.reduce((s, x) => s + parseFloat(x.replace(/\s*min(utes)?/i,'')) / 60, 0);
+
+  // 2. Time ranges like "08:45-10:45", "09:00 to 11:30", "from 09:00 until 11:30" → duration in hours
+  const rangeRegex = /(\d{1,2}):(\d{2})\s*(?:-\s*|to\s+|until\s+|\s+-\s+)(\d{1,2}):(\d{2})/gi;
+  let rangeMatch;
+  while ((rangeMatch = rangeRegex.exec(original)) !== null) {
+    const sh = parseInt(rangeMatch[1]), sm = parseInt(rangeMatch[2]);
+    const eh = parseInt(rangeMatch[3]), em = parseInt(rangeMatch[4]);
+    const mins = (eh * 60 + em) - (sh * 60 + sm);
+    if (mins > 0) h += mins / 60;
+  }
+
+  // 3. Standown with time — "Standown 15:00" → assume 2h standown
+  if (h === 0) {
+    const standown = original.match(/standown\s+(\d{1,2}):(\d{2})/i);
+    if (standown) h += 2;
+  }
+
+  // Cap at 24h to avoid equipment model numbers (e.g. 9570h) being counted as hours
+  return Math.round(Math.min(h, 24) * 10) / 10;
 }
 
 function esc(s) {
