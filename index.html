@@ -348,11 +348,49 @@
   </div>
 
 
-  <!-- ═══   <!-- === PROGRESS === -->
+  <!-- ═══ PROGRESS === -->
   <div class="view" id="view-progress">
-    <div id="progressList">
-      <div class="loading">Loading progress…</div>
+    <div class="section-header" style="margin-bottom:18px;padding:14px 18px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);display:flex;align-items:center;gap:12px">
+      <img src="assets/tgw-logo.png" alt="TGW" style="height:32px;width:32px;border-radius:6px;flex-shrink:0">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:14px;font-weight:700">EMA5 — Site Progress & Schedule</div>
+        <div style="font-size:11px;color:var(--muted)">Amazon Kettering · TGW Group · Dematic</div>
+      </div>
     </div>
+
+    <!-- Time Schedule / Gantt -->
+    <div class="chart-card" style="margin-bottom:20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <div style="font-size:13px;font-weight:600">📅 Project Gantt — Dematic Time Schedule</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <select id="ganttSectionFilter" onchange="renderGantt()" style="font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg-card);color:var(--text)">
+            <option value="ALL">All Sections</option>
+            <option value="MEZZ" selected>MEZZanine</option>
+            <option value="DEM Mech">DEM Mech</option>
+            <option value="DEM Elec">DEM Elec</option>
+            <option value="DEM Comm">DEM Comm</option>
+            <option value="Steelwork">Steelwork</option>
+            <option value="Fencing">Fencing</option>
+          </select>
+          <span style="font-size:10px;color:var(--muted)">← scroll →</span>
+        </div>
+      </div>
+      <div id="ganttScrollContainer" style="overflow-x:auto;overflow-y:hidden;background:var(--surface2);border-radius:8px;padding:12px;min-height:240px">
+        <div id="ganttInner"></div>
+      </div>
+    </div>
+
+    <!-- Site Progress Items -->
+    <div style="margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
+      <div style="font-size:13px;font-weight:600">🔧 Site Progress — Items</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button onclick="filterProgress('all')" id="pf-all" class="pill active" style="font-size:10px;padding:3px 8px">All</button>
+        <button onclick="filterProgress('MEZZ')" id="pf-MEZZ" class="pill" style="font-size:10px;padding:3px 8px">MEZZ</button>
+        <button onclick="filterProgress('Steelwork')" id="pf-Steelwork" class="pill" style="font-size:10px;padding:3px 8px">Steelwork</button>
+        <button onclick="filterProgress('Fencing')" id="pf-Fencing" class="pill" style="font-size:10px;padding:3px 8px">Fencing</button>
+      </div>
+    </div>
+    <div id="progressList"></div>
   </div>
 
   <!-- === SAFETY === -->
@@ -705,67 +743,181 @@ function renderCharts() {
 
 function renderGantt() {
   const inner = document.getElementById('ganttInner');
+  const scroll = document.getElementById('ganttScrollContainer');
   if (!inner) return;
   if (!window.TIME_SCHEDULE || !window.TIME_SCHEDULE.length) {
-    inner.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:40px">Schedule data not yet available — pending integration</div>';
+    inner.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:40px">⏳ Schedule loading…</div>';
     return;
   }
-  const items = window.TIME_SCHEDULE.filter(r => r['Planned Start'] || r['Planned Finish']).slice(0, 20);
-  if (!items.length) { inner.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:40px">No schedule items with dates found</div>'; return; }
-  const allDates = [];
-  items.forEach(r => { ['Planned Start','Planned Finish','Actual Start','Actual Finish'].forEach(f => { const d = parseDateDMY(r[f]); if (d) allDates.push(d.getTime()); }); });
-  if (!allDates.length) { inner.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:40px">No valid dates in schedule</div>'; return; }
-  const minDate = new Date(Math.min(...allDates));
-  const maxDate = new Date(Math.max(...allDates));
-  const rangeMs = maxDate - minDate || 1;
-  const totalDays = Math.ceil(rangeMs / 86400000);
-  // Month labels row
-  const monthMap = {};
-  items.forEach(r => { ['Planned Start','Planned Finish','Actual Start','Actual Finish'].forEach(f => {
-    const d = parseDateDMY(r[f]); if (d) { const mk = d.getFullYear() + '-' + d.getMonth(); if (!monthMap[mk]) monthMap[mk] = d; }
-  }); });
-  let monthLabelsHtml = '<div style="display:flex;font-size:10px;color:var(--muted);margin-bottom:4px;position:relative;height:16px">';
-  Object.entries(monthMap).sort().forEach(([mk, d]) => {
-    const leftPct = ((d - minDate) / rangeMs * 100).toFixed(2);
-    monthLabelsHtml += '<span style="position:absolute;left:' + leftPct + '%;font-weight:600;color:var(--text)">' + d.toLocaleDateString('en-GB',{month:'short',year:'2-digit'}) + '</span>';
+  
+  // ── Section filter ──
+  const filterEl = document.getElementById('ganttSectionFilter');
+  const sectionFilter = filterEl ? filterEl.value : 'ALL';
+  
+  // ── Filter to Dematic main plan (Amazon_IXD25_EMA5_UK, not -C) ──
+  let allItems = window.TIME_SCHEDULE.filter(r => r['Project Plan'] === 'Amazon_IXD25_EMA5_UK');
+  if (sectionFilter !== 'ALL') {
+    allItems = allItems.filter(r => r.Section === sectionFilter);
+  }
+  
+  // Keep only items with planned dates, at Levels 4-6 (summary/detail)
+  let items = allItems.filter(r => {
+    const ps = r['Planned Start']; const pf = r['Planned Finish'];
+    if (!ps && !pf) return false;
+    const lvl = r.Level || 0;
+    if (lvl < 4 || lvl > 6) return false;
+    return true;
   });
-  monthLabelsHtml += '</div>';
-  // Week grid lines
-  let gridHtml = '<div style="display:flex;align-items:stretch;min-height:40px;position:relative">';
+  
+  if (!items.length) {
+    inner.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:40px">No items match this filter</div>';
+    return;
+  }
+  
+  // ── Sort by Sort Order ──
+  items.sort((a, b) => (parseInt(a['Sort Order'] || 0)) - (parseInt(b['Sort Order'] || 0)));
+  
+  // Limit for performance — top 30 by sort order
+  items = items.slice(0, 30);
+  
+  // ── Collect all dates for range ──
+  const allDates = [];
+  items.forEach(r => {
+    ['Planned Start','Planned Finish','Actual Start','Actual Finish'].forEach(f => {
+      const d = parseDateDMY(r[f]); if (d) allDates.push(d.getTime());
+    });
+  });
+  if (!allDates.length) {
+    inner.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:40px">No valid dates in schedule</div>';
+    return;
+  }
+  
+  const minDate = new Date(Math.min(...allDates) - 86400000 * 7); // 1wk padding
+  const maxDate = new Date(Math.max(...allDates) + 86400000 * 14); // 2wk padding
+  const rangeMs = maxDate - minDate || 1;
+  
+  const toPct = (d) => ((d - minDate) / rangeMs * 100).toFixed(2);
+  const toWidth = (d1, d2) => Math.max(0.5, (d2 - d1) / rangeMs * 100).toFixed(2);
+  
+  // ── Section color legend ──
+  const sectionColors = {
+    'DEM Mech': '#2563EB','DEM Elec': '#7C3AED','DEM Comm': '#0891B2',
+    'MEZZ': '#CA8A04','Steelwork': '#DC2626','Fencing': '#16A34A',
+    'WPC': '#6B7280','WPD': '#6B7280','Default': '#374151'
+  };
+  const getColor = (sec) => sectionColors[sec] || sectionColors['Default'];
+  
+  // ── Month ruler ──
+  const monthMap = {};
+  items.forEach(r => {
+    ['Planned Start','Planned Finish'].forEach(f => {
+      const d = parseDateDMY(r[f]); if (d) {
+        const mk = d.getFullYear() + '-' + d.getMonth();
+        if (!monthMap[mk] || d < monthMap[mk]) monthMap[mk] = d;
+      }
+    });
+  });
+  
+  let rulerHtml = '<div style="position:relative;height:24px;margin-bottom:4px;overflow:hidden">';
+  Object.entries(monthMap).sort().forEach(([mk, d]) => {
+    const left = toPct(d.getTime());
+    rulerHtml += '<div style="position:absolute;left:' + left + '%;top:0;font-size:10px;font-weight:700;color:var(--text);white-space:nowrap">' +
+      d.toLocaleDateString('en-GB', {month:'short', year:'2-digit'}) + '</div>';
+  });
+  rulerHtml += '</div>';
+  
+  // ── Grid lines (weeks) ──
+  let gridHtml = '<div style="position:relative;height:8px;margin-bottom:12px">';
+  const totalDays = Math.ceil(rangeMs / 86400000);
   const numWeeks = Math.ceil(totalDays / 7);
   for (let i = 0; i <= numWeeks; i++) {
     const d = new Date(minDate.getTime() + i * 7 * 86400000);
-    const leftPct = ((d - minDate) / rangeMs * 100).toFixed(2);
-    gridHtml += '<div style="position:absolute;left:' + leftPct + '%;top:0;bottom:0;width:1px;background:var(--border);z-index:0"></div>';
+    const left = toPct(d.getTime());
+    if (parseFloat(left) > 100) break;
+    gridHtml += '<div style="position:absolute;left:' + left + '%;top:0;bottom:0;width:1px;background:rgba(0,0,0,0.08)"></div>';
   }
   gridHtml += '</div>';
+  
+  // ── Rows ──
   let rowsHtml = '';
   items.forEach(r => {
-    const desc = esc(r.Description || r.description || '');
-    const plannedStart = parseDateDMY(r['Planned Start']);
-    const plannedFinish = parseDateDMY(r['Planned Finish']);
-    const actualStart = parseDateDMY(r['Actual Start']);
-    const actualFinish = parseDateDMY(r['Actual Finish']);
-    const progress = parseInt(r.Progress || r.progress || 0);
-    const toPercent = (d) => ((d - minDate) / rangeMs * 100).toFixed(2);
-    const toWidth = (d1, d2) => Math.max(1, (d2 - d1) / rangeMs * 100).toFixed(2);
-    let barsHtml = '';
-    if (plannedStart && plannedFinish) {
-      const l = toPercent(plannedStart), w = toWidth(plannedStart, plannedFinish);
-      barsHtml += '<div style="position:absolute;left:' + l + '%;width:' + w + '%;top:8px;height:16px;background:rgba(37,99,235,0.4);border:1px solid rgba(37,99,235,0.8);border-radius:3px;z-index:1" title="Planned: ' + (r['Planned Start'] || '') + ' → ' + (r['Planned Finish'] || '') + '"><span style="position:absolute;right:3px;top:1px;font-size:9px;font-weight:700;color:rgba(37,99,235,1)">' + progress + '%</span></div>';
+    const desc = esc(r.Description || '');
+    const section = r.Section || '';
+    const status = r.Status || '';
+    const lvl = r.Level || 0;
+    const progress = parseInt(r.Progress || 0);
+    const ps = parseDateDMY(r['Planned Start']);
+    const pf = parseDateDMY(r['Planned Finish']);
+    const as = parseDateDMY(r['Actual Start']);
+    const af = parseDateDMY(r['Actual Finish']);
+    const secColor = getColor(section);
+    
+    // Status dot
+    const statusDot = status === 'Good' ? '🟢' : status === 'Warning' ? '🟡' : status === 'Bad' ? '🔴' : '⚪';
+    
+    // Bar widths
+    let plannedBar = '', actualBar = '';
+    if (ps && pf) {
+      const l = toPct(ps.getTime()), w = toWidth(ps.getTime(), pf.getTime());
+      plannedBar = '<div style="position:absolute;left:' + l + '%;width:' + w + '%;top:4px;height:12px;background:' + secColor + ';opacity:0.35;border:1px solid ' + secColor + ';border-radius:3px;z-index:1" title="Planned: ' + (r['Planned Start']||'') + ' → ' + (r['Planned Finish']||'') + '"></div>';
     }
-    if (actualStart && actualFinish) {
-      const l = toPercent(actualStart), w = toWidth(actualStart, actualFinish);
-      barsHtml += '<div style="position:absolute;left:' + l + '%;width:' + w + '%;top:28px;height:14px;background:rgba(22,163,74,0.5);border:1px solid rgba(22,163,74,0.9);border-radius:3px;z-index:2" title="Actual: ' + (r['Actual Start'] || '') + ' → ' + (r['Actual Finish'] || '') + '"></div>';
+    if (as && af) {
+      const l = toPct(as.getTime()), w = toWidth(as.getTime(), af.getTime());
+      actualBar = '<div style="position:absolute;left:' + l + '%;width:' + w + '%;top:20px;height:10px;background:' + secColor + ';border-radius:3px;z-index:2" title="Actual: ' + (r['Actual Start']||'') + ' → ' + (r['Actual Finish']||'') + '"></div>';
+    } else if (ps && pf) {
+      // Show planned bar as actual if no actual dates
+      actualBar = '<div style="position:absolute;left:' + toPct(ps.getTime()) + '%;width:' + toWidth(ps.getTime(), pf.getTime()) + '%;top:20px;height:10px;background:' + secColor + ';opacity:0.7;border-radius:3px;z-index:2"></div>';
     }
-    rowsHtml += '<div style="position:relative;min-height:48px;margin-bottom:8px;border-bottom:1px solid var(--border);padding-bottom:6px">' +
-      '<div style="font-size:11px;font-weight:600;color:var(--text);margin-bottom:4px">' + desc + '</div>' +
-      '<div style="position:relative;height:48px">' + barsHtml + '</div></div>';
+    
+    // Indent level indicator
+    const indent = (lvl - 4) * 12;
+    const isL4 = lvl === 4;
+    const rowBg = isL4 ? 'rgba(0,0,0,0.03)' : 'transparent';
+    
+    rowsHtml += '<div style="position:relative;min-height:36px;margin-bottom:6px;padding:4px 4px 4px ' + (8 + indent) + 'px;background:' + rowBg + ';border-radius:4px;border-left:3px solid ' + secColor + '">';
+    
+    // Row header
+    rowsHtml += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">';
+    rowsHtml += '<span style="font-size:10px">' + statusDot + '</span>';
+    rowsHtml += '<div style="font-size:11px;font-weight:' + (isL4 ? '700' : '500') + ';color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + desc + '</div>';
+    if (progress > 0) rowsHtml += '<div style="font-size:10px;font-weight:700;color:' + secColor + ';flex-shrink:0">' + progress + '%</div>';
+    rowsHtml += '</div>';
+    
+    // Bar area
+    rowsHtml += '<div style="position:relative;height:36px;background:rgba(255,255,255,0.4);border-radius:4px">' + plannedBar + actualBar + '</div>';
+    
+    // Meta row
+    rowsHtml += '<div style="display:flex;gap:8px;margin-top:2px;flex-wrap:wrap">';
+    if (ps) rowsHtml += '<span style="font-size:10px;color:var(--muted)">P:' + (r['Planned Start']||'') + '</span>';
+    if (as) rowsHtml += '<span style="font-size:10px;color:var(--muted)">A:' + (r['Actual Start']||'') + '</span>';
+    if (section) rowsHtml += '<span style="font-size:10px;font-weight:600;color:' + secColor + '">' + section + '</span>';
+    rowsHtml += '</div></div>';
   });
-  inner.innerHTML = monthLabelsHtml + gridHtml + rowsHtml;
+  
+  inner.innerHTML = rulerHtml + gridHtml + rowsHtml;
+  
+  // ── Set min-width on container for horizontal scroll ──
+  if (scroll) {
+    const allDates2 = items.flatMap(r => ['Planned Start','Planned Finish'].map(f => parseDateDMY(r[f])).filter(Boolean));
+    if (allDates2.length > 0) {
+      const mn = Math.min(...allDates2.map(d => d.getTime()));
+      const mx = Math.max(...allDates2.map(d => d.getTime()));
+      const pxPerDay = 18; // conservative estimate
+      const totalWidth = Math.ceil((mx - mn) / 86400000) * pxPerDay + 200;
+      inner.style.minWidth = totalWidth + 'px';
+    }
+  }
 }
 
-// ── Render Journal ──
+// ── Progress filter ──
+let currentProgressFilter = 'all';
+function filterProgress(section) {
+  currentProgressFilter = section;
+  document.querySelectorAll('.progress-section-pill').forEach(b => b.classList.remove('active'));
+  document.getElementById('pf-' + section).classList.add('active');
+  renderProgress();
+}
+
 let currentJournalMonth = 'all';
 
 function renderJournal(monthKey = 'all') {
@@ -1005,88 +1157,123 @@ function renderTeam() {
 
 function renderProgress() {
   const container = document.getElementById('progressList');
-  const items = DATA.siteProgress.sort((a, b) => (parseInt(b.Progress||b.progress||0)) - (parseInt(a.Progress||a.progress||0)));
-  if (!items.length) { container.innerHTML = '<div class="loading">No data.</div>'; return; }
-
-  // Accumulated delay & delivery date summary
-  let totalDelay = 0;
-  let maxActualFinish = null;
-  items.forEach(r => {
-    const pfStr = r['Planned Finish'] || '';
-    const afStr = r['Actual Finish'] || '';
-    if (afStr) {
-      const afParts = afStr.split('/');
-      const afDate = new Date(afParts[2] + '-' + afParts[1] + '-' + afParts[0]);
-      if (!isNaN(afDate.getTime())) {
-        if (!maxActualFinish || afDate > maxActualFinish) maxActualFinish = afDate;
+  const allItems = DATA.siteProgress;
+  
+  // Apply section filter
+  const items = currentProgressFilter === 'all'
+    ? allItems
+    : allItems.filter(r => r.Section === currentProgressFilter);
+  
+  const sorted = items.sort((a, b) => (parseInt(b.Progress||b.progress||0)) - (parseInt(a.Progress||a.progress||0)));
+  
+  if (!sorted.length) {
+    container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:40px">No items for this section</div>';
+    return;
+  }
+  
+  // Summary KPIs
+  let totalDelay = 0, maxActualFinish = null, maxFinish = null;
+  const now = new Date();
+  
+  sorted.forEach(r => {
+    const pf = r['Planned Finish'] || '', af = r['Actual Finish'] || '';
+    if (af) {
+      const ad = parseDateDMY(af);
+      if (ad && (!maxActualFinish || ad > maxActualFinish)) maxActualFinish = ad;
+    }
+    if (pf && af) {
+      const pd = parseDateDMY(pf), ad = parseDateDMY(af);
+      if (pd && ad) {
+        const diff = Math.round((ad - pd) / 86400000);
+        if (diff > 0) totalDelay += diff;
       }
     }
-    if (pfStr && afStr) {
-      const pfParts = pfStr.split('/');
-      const afParts = afStr.split('/');
-      const pfDate = new Date(pfParts[2] + '-' + pfParts[1] + '-' + pfParts[0]);
-      const afDate = new Date(afParts[2] + '-' + afParts[1] + '-' + afParts[0]);
-      if (!isNaN(pfDate.getTime()) && !isNaN(afDate.getTime())) {
-        const diffDays = Math.round((afDate - pfDate) / 86400000);
-        if (diffDays > 0) totalDelay += diffDays;
-      }
-    }
+    const pfd = parseDateDMY(pf);
+    if (pfd && (!maxFinish || pfd > maxFinish)) maxFinish = pfd;
   });
-
-  const summaryHtml = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
-    <div class="kpi-card">
-      <div class="kpi-label">Accumulated Delay (days)</div>
-      <div class="kpi-value" id="progressDelayDays" style="color:${totalDelay > 0 ? 'var(--yellow)' : 'var(--green)'}">${totalDelay > 0 ? '+' + totalDelay : totalDelay}</div>
-      <div class="kpi-sub">sum of all delay deltas</div>
+  
+  const totalItems = sorted.length;
+  const doneItems = sorted.filter(r => parseInt(r.Progress||0) >= 100).length;
+  const warnItems = sorted.filter(r => (r.Status||'') === 'Warning' || (r.Status||'') === 'Bad').length;
+  
+  const summaryHtml = `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px">
+    <div class="kpi-card" style="background:linear-gradient(135deg,rgba(37,99,235,0.10),rgba(37,99,235,0.03));border:1px solid rgba(37,99,235,0.18)">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:600;margin-bottom:4px">Items</div>
+      <div class="kpi-value" style="font-size:24px;color:var(--accent)">${totalItems}</div>
+      <div class="kpi-sub">${currentProgressFilter === 'all' ? 'all sections' : currentProgressFilter}</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-label">Delivery Date</div>
-      <div class="kpi-value" id="progressDelivery" style="font-size:18px">${maxActualFinish ? maxActualFinish.toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'}) : '—'}</div>
-      <div class="kpi-sub">vs customer committed date</div>
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:600;margin-bottom:4px">Done</div>
+      <div class="kpi-value" style="font-size:24px;color:var(--green)">${doneItems}</div>
+      <div class="kpi-sub">${totalItems > 0 ? Math.round(doneItems/totalItems*100) : 0}% complete</div>
+    </div>
+    <div class="kpi-card" ${warnItems > 0 ? "style='background:rgba(234,179,8,0.08);border:1px solid rgba(234,179,8,0.20)'" : ""}>
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:600;margin-bottom:4px">Warnings</div>
+      <div class="kpi-value" style="font-size:24px;color:${warnItems > 0 ? 'var(--yellow)' : 'var(--muted)'}">${warnItems}</div>
+      <div class="kpi-sub">Warning / Bad status</div>
+    </div>
+    <div class="kpi-card">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:600;margin-bottom:4px">Max Delay</div>
+      <div class="kpi-value" style="font-size:24px;color:${totalDelay > 0 ? 'var(--yellow)' : 'var(--green)'}">${totalDelay > 0 ? '+' + totalDelay : 0}d</div>
+      <div class="kpi-sub">cumulated delay</div>
     </div>
   </div>`;
-
+  
+  // Render items
   let html = '';
-  items.forEach(r => {
+  sorted.forEach(r => {
     const progress = parseInt(r.Progress || r.progress || 0);
+    const status = r.Status || '';
+    const statusColor = status === 'Good' ? 'var(--green)' : status === 'Warning' ? 'var(--yellow)' : status === 'Bad' ? 'var(--red)' : 'var(--muted)';
     const pctColor = progress >= 80 ? 'var(--green)' : progress >= 40 ? 'var(--yellow)' : 'var(--red)';
     const barColor = progress >= 80 ? 'var(--green)' : progress >= 40 ? 'var(--yellow)' : 'var(--red)';
-    const section = r.Section || r.section || '';
-    const assigned = r['Assigned To'] || r.assigned_to || '';
+    const section = r.Section || '';
+    const assigned = r['Assigned To'] || '';
     const plannedStart = r['Planned Start'] || '';
     const plannedFinish = r['Planned Finish'] || '';
     const actualFinish = r['Actual Finish'] || '';
-    const delay = r['Expected Delay'] || r.expected_delay || '';
+    
+    // Delay delta
     let delayDelta = '';
     if (plannedFinish && actualFinish) {
-      const pfParts = plannedFinish.split('/');
-      const afParts = actualFinish.split('/');
-      const pfDate = new Date(pfParts[2] + '-' + pfParts[1] + '-' + pfParts[0]);
-      const afDate = new Date(afParts[2] + '-' + afParts[1] + '-' + afParts[0]);
-      if (!isNaN(pfDate.getTime()) && !isNaN(afDate.getTime())) {
-        const diffDays = Math.round((afDate - pfDate) / 86400000);
-        if (diffDays > 0) delayDelta = `<span style="color:var(--red)">Δ +${diffDays}d</span>`;
-        else if (diffDays < 0) delayDelta = `<span style="color:var(--green)">Δ ${diffDays}d</span>`;
+      const pd = parseDateDMY(plannedFinish), ad = parseDateDMY(actualFinish);
+      if (pd && ad) {
+        const diff = Math.round((ad - pd) / 86400000);
+        if (diff > 0) delayDelta = '<span style="color:var(--red);font-weight:700;font-size:11px">+Δ' + diff + 'd</span>';
+        else if (diff < 0) delayDelta = '<span style="color:var(--green);font-weight:700;font-size:11px">Δ' + diff + 'd</span>';
       }
     }
+    
     html += `<div class="progress-item">
       <div class="progress-header">
-        <div class="progress-desc">${esc(r.Description || r.description || '')}</div>
+        <div class="progress-desc">
+          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${statusColor};margin-right:6px;flex-shrink:0"></span>
+          ${esc(r.Description || r.description || '')}
+        </div>
         <div class="progress-pct" style="color:${pctColor}">${progress}%</div>
       </div>
       <div class="progress-bar"><div class="progress-fill" style="width:${progress}%;background:${barColor}"></div></div>
       <div class="progress-meta">
-        ${section ? `<span>📍 ${esc(section)}</span>` : ''}
-        ${assigned ? `<span>→ ${esc(assigned)}</span>` : ''}
-        ${plannedStart ? `<span>Start: ${esc(plannedStart)}</span>` : ''}
-        ${plannedFinish ? `<span>Finish: ${esc(plannedFinish)}</span>` : ''}
-        ${actualFinish ? `<span style="color:var(--green)">Real: ${esc(actualFinish)}</span>` : ''}
-        ${delayDelta ? ` ${delayDelta}` : ''}
-        ${delay && delay !== '0 days' ? `<span style="color:var(--red)">⚠ ${esc(delay)}</span>` : ''}
+        ${section ? '<span style="color:var(--accent);font-size:10px;font-weight:600">' + esc(section) + '</span>' : ''}
+        ${assigned ? '<span>' + esc(assigned) + '</span>' : ''}
+        ${plannedStart ? '<span style="color:var(--muted)">P:' + esc(plannedStart) + '</span>' : ''}
+        ${plannedFinish ? '<span style="color:var(--muted)">→' + esc(plannedFinish) + '</span>' : ''}
+        ${actualFinish ? '<span style="color:var(--green)">A:' + esc(actualFinish) + '</span>' : ''}
+        ${delayDelta ? ' ' + delayDelta : ''}
       </div>
     </div>`;
   });
+  
   container.innerHTML = summaryHtml + html;
+}
+
+// ── Progress filter button helper (called from HTML onclick) ──
+function filterProgress(section) {
+  currentProgressFilter = section;
+  document.querySelectorAll('[id^="pf-"]').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('pf-' + section);
+  if (btn) btn.classList.add('active');
+  renderProgress();
 }
 
 // ── Navigation ──
