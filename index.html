@@ -543,6 +543,9 @@ function delayHours(text) {
   const original = String(text);
   let h = 0;
 
+  // 0. half a day = 4h (must be first, before other patterns)
+  if (/half\s*a?\s*day/i.test(original)) return 4;
+
   // 1a. Explicit Xh patterns (e.g. "1h", "3h", "1.5h", "3h just for sorter")
   const explicit = original.match(/(\d+(?:\.\d+)?)\s*h(?!ou|ly)/gi);
   if (explicit) h += explicit.reduce((s, x) => s + parseFloat(x), 0);
