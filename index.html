@@ -478,7 +478,10 @@
 </div>
 
 <script>
-const GH_BASE = 'https://raw.githubusercontent.com/AS76/ema5-data/main';
+// Detect environment: VPS (ema5.asassi.cloud) uses local /data/, GitHub Pages uses GitHub raw
+const IS_VPS = window.location.hostname.includes('ema5.asassi.cloud');
+const GH_BASE = IS_VPS ? './data' : 'https://raw.githubusercontent.com/AS76/ema5-data/main';
+console.log('[EMA5] Environment:', IS_VPS ? 'VPS (local data)' : 'GitHub Pages (remote data)', '| base:', GH_BASE);
 let DATA = {};
 let charts = {};
 
