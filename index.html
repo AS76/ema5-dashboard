@@ -625,14 +625,12 @@ function renderGantt() {
     axisHtml += '<span>' + d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'}) + '</span>';
   }
   axisHtml += '</div>';
-  let html = axisHtml;
-
-  // old date-range calc block removed — was using vars before definition
+  html = axisHtml;
 
   const toPercent = (d) => ((d - minDate) / rangeMs * 100).toFixed(2);
   const toWidth = (d1, d2) => Math.max(1, (new Date(d2) - new Date(d1)) / rangeMs * 100).toFixed(2);
 
-  let html = '';
+  html = '';
   items.forEach(r => {
     const desc = esc(r.Description || r.description || '');
     const plannedStart = parseDateDMY(r['Planned Start']);
