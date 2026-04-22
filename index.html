@@ -357,46 +357,48 @@
 
   <!-- === SAFETY === -->
   <div id="view-safety" class="view">
-    <div class="section-header" style="margin-bottom:20px;padding:16px 20px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius)">
-      <img src="assets/tgw-logo.png" alt="TGW" style="height:36px;margin-right:12px;border-radius:4px;vertical-align:middle">
-      <div style="display:inline-block;vertical-align:middle">
-        <div style="font-size:15px;font-weight:700;color:var(--text)">EMA5 — Safety Dashboard</div>
-        <div style="font-size:11px;color:var(--muted)">Amazon Kettering | TGW Group | Hazard Observations</div>
+    <div class="section-header" style="margin-bottom:18px;padding:14px 18px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);display:flex;align-items:center;gap:12px">
+      <img src="assets/tgw-logo.png" alt="TGW" style="height:32px;width:32px;border-radius:6px;vertical-align:middle;flex-shrink:0">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">EMA5 — Safety Dashboard</div>
+        <div style="font-size:11px;color:var(--muted)">Amazon Kettering · TGW Group · Hazard Observations</div>
       </div>
-      <div id="safetyWeekBadge" style="margin-left:auto;font-weight:700;font-size:20px;color:var(--accent)">W16</div>
+      <div id="safetyWeekBadge" style="font-weight:800;font-size:18px;color:var(--accent);background:rgba(37,99,235,0.1);padding:4px 12px;border-radius:8px;flex-shrink:0">W16</div>
     </div>
 
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
-      <div class="kpi-card">
-        <div class="kpi-value" id="kpiPosRate" style="color:var(--green)">74%</div>
-        <div class="kpi-label">Positive Rate</div>
-        <div class="kpi-sub" id="kpiPosTrend">↑ best week</div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:18px">
+      <div class="kpi-card" style="background:linear-gradient(135deg,rgba(22,163,74,0.12),rgba(22,163,74,0.03));border:1px solid rgba(22,163,74,0.22)">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:600;margin-bottom:5px">Positive Rate</div>
+        <div class="kpi-value" id="kpiPositiveRate" style="color:var(--green);font-size:26px">—</div>
+        <div class="kpi-sub" id="kpiPositiveTrend" style="font-size:10px">loading…</div>
+      </div>
+      <div class="kpi-card" style="background:linear-gradient(135deg,rgba(220,38,38,0.10),rgba(220,38,38,0.03));border:1px solid rgba(220,38,38,0.20)">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:600;margin-bottom:5px">Stop Work</div>
+        <div class="kpi-value" id="kpiStopWork" style="color:var(--red);font-size:26px">—</div>
+        <div class="kpi-sub" style="font-size:10px">this week</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-value" id="kpiStopWork">0</div>
-        <div class="kpi-label">STOP WORK</div>
-        <div class="kpi-sub">this week</div>
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:600;margin-bottom:5px">Resolution</div>
+        <div class="kpi-value" id="kpiResolution" style="font-size:26px">—</div>
+        <div class="kpi-sub" style="font-size:10px">overall</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-value" id="kpiResolution">92%</div>
-        <div class="kpi-label">Resolution</div>
-        <div class="kpi-sub">overall</div>
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:600;margin-bottom:5px">Observations</div>
+        <div class="kpi-value" id="kpiTotalObs" style="font-size:26px">—</div>
+        <div class="kpi-sub" style="font-size:10px">YTD</div>
       </div>
-      <div class="kpi-card">
-        <div class="kpi-value" id="kpiTotalObs">720</div>
-        <div class="kpi-label">Observations</div>
-        <div class="kpi-sub">YTD</div>
+      <div class="kpi-card" style="background:linear-gradient(135deg,rgba(234,179,8,0.10),rgba(234,179,8,0.03));border:1px solid rgba(234,179,8,0.20)">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:600;margin-bottom:5px">Injury Potential</div>
+        <div class="kpi-value" id="kpiInjuryPotential" style="color:var(--yellow);font-size:26px">—</div>
+        <div class="kpi-sub" style="font-size:10px">YTD</div>
       </div>
     </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-      <div class="chart-card">
         <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px">📈 Weekly Positive Rate</div>
-        <div style="height:180px;position:relative"><canvas id="chartSafetyTrend"></canvas></div>
+        <div style="height:200px;position:relative"><canvas id="chartSafetyTrend"></canvas></div>
       </div>
       <div class="chart-card">
         <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px">🍩 By Category</div>
-        <div style="height:180px;position:relative"><canvas id="chartSafetyCats"></canvas></div>
+        <div style="height:200px;position:relative"><canvas id="chartSafetyCats"></canvas></div>
       </div>
     </div>
 
@@ -417,9 +419,15 @@
 
     <div class="chart-card" style="margin-bottom:20px">
       <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px">📅 Monthly Volume</div>
-      <div style="height:140px;position:relative"><canvas id="chartSafetyMonthly"></canvas></div>
+      <div style="height:160px;position:relative"><canvas id="chartSafetyMonthly"></canvas></div>
     </div>
   </div>
+
+  
+    <div class="chart-card" style="margin-bottom:18px">
+      <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px">👥 Observations by Reporter</div>
+      <div id="reporterTable" style="font-size:12px;max-height:200px;overflow-y:auto"></div>
+    </div>
 
   <!-- === LESSONS === -->
   <div class="view" id="view-lessons">
@@ -1158,14 +1166,15 @@ function renderSafety() {
   
   const posRate = lw.total > 0 ? Math.round(lw.positive / lw.total * 100) : 0;
   const prevRate = pw.total > 0 ? Math.round(pw.positive / pw.total * 100) : 0;
-  const trend = posRate >= prevRate ? '↑ vs prev week' : '↓ vs prev week';
+  const trend = posRate >= prevRate ? '↑ ' + posRate + '% this week' : '↓ ' + posRate + '% this week';
   
   document.getElementById('kpiPositiveRate').textContent = posRate + '%';
   document.getElementById('kpiPositiveTrend').textContent = trend;
   document.getElementById('kpiStopWork').textContent = lw.stop_work || 0;
   document.getElementById('kpiResolution').textContent = d.totals.resolved > 0 && d.totals.total > 0 ? Math.round(d.totals.resolved / d.totals.total * 100) + '%' : '—';
   document.getElementById('kpiTotalObs').textContent = d.totals.total;
-  document.getElementById('safetyWeekBadge').textContent = lastWk.replace('W','W');
+  document.getElementById('kpiInjuryPotential').textContent = d.totals.injury_potential || 0;
+  document.getElementById('safetyWeekBadge').textContent = lastWk.replace('2026-','');
 
   // Positive rate trend chart
   if (window.safetyTrendChart) window.safetyTrendChart.destroy();
@@ -1177,83 +1186,121 @@ function renderSafety() {
       datasets: [{
         label: 'Positive %',
         data: weeks.map(w => { const q = d.weekly[w]; return q && q.total > 0 ? Math.round(q.positive / q.total * 100) : 0; }),
-        borderColor: '#16A34A', backgroundColor: 'rgba(22,163,74,0.1)', fill: true, tension: 0.4,
-        pointBackgroundColor: weeks.map(w => { const q = d.weekly[w]; const r = q && q.total > 0 ? q.positive/q.total*100 : 0; return r >= 60 ? '#16A34A' : r >= 45 ? '#CA8A04' : '#DC2626'; })
+        borderColor: '#16A34A', backgroundColor: 'rgba(22,163,74,0.12)', fill: true, tension: 0.4,
+        pointBackgroundColor: weeks.map(w => { const q = d.weekly[w]; const r = q && q.total > 0 ? q.positive/q.total*100 : 0; return r >= 60 ? '#16A34A' : r >= 45 ? '#CA8A04' : '#DC2626'; }),
+        pointRadius: 5, pointBorderWidth: 2, pointBorderColor: '#fff'
       }]
     },
     options: { responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.parsed.y + '% positive rate' } } },
-      scales: { y: { min: 0, max: 100, title: { display: true, text: 'Positive %' } },
-                x: { title: { display: true, text: 'Week' } } }
+      scales: { y: { min: 0, max: 100, grid: { color: 'rgba(0,0,0,0.05)' }, title: { display: false } },
+                x: { grid: { display: false }, title: { display: true, text: 'Week' } } }
     }
   });
 
-  // Category pie/doughnut
+  // Category doughnut
   if (window.safetyCatChart) window.safetyCatChart.destroy();
   const catLabels = Object.keys(d.categories);
-  // Each category has _total and _positive meta fields
   const catTotals = catLabels.map(c => d.categories[c]['_total'] || 0);
-  const catPosRates = catLabels.map(c => {
-    const ct = d.categories[c];
-    return ct['_total'] > 0 ? Math.round(ct['_positive'] / ct['_total'] * 100) : 0;
-  });
+  const catPosRates = catLabels.map(c => { const ct = d.categories[c]; return ct['_total'] > 0 ? Math.round(ct['_positive'] / ct['_total'] * 100) : 0; });
   const catColors = ['#DC2626','#2563EB','#16A34A','#CA8A04','#7C3AED','#0891B2'];
   const cCtx = document.getElementById('chartSafetyCats').getContext('2d');
   window.safetyCatChart = new Chart(cCtx, {
     type: 'doughnut',
-    data: { labels: catLabels.map(l => l + ' (' + catPosRates[catLabels.indexOf(l)] + '%)'), datasets: [{ data: catTotals, backgroundColor: catColors }] },
+    data: { labels: catLabels.map(l => l + ' ' + catPosRates[catLabels.indexOf(l)] + '%'), datasets: [{ data: catTotals, backgroundColor: catColors, borderWidth: 2, borderColor: '#fff' }] },
     options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } } } }
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 }, padding: 8 } },
+                tooltip: { callbacks: { label: ctx => ctx.label + ': ' + ctx.parsed.y + ' obs' } } } }
   });
 
-  // Top hazards list
-  const hazHtml = Object.entries(d.top_hazards).slice(0, 8).map(([k,v]) =>
-    `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border)">
-      <span>${k}</span><span style="color:var(--red);font-weight:600">${v}</span>
-    </div>`).join('');
-  document.getElementById('topHazardsList').innerHTML = hazHtml || '<div style="color:var(--muted)">—</div>';
+  // Top hazards list — with positive rate per hazard
+  const hazHtml = Object.entries(d.top_hazards).slice(0, 8).map(([k,v]) => {
+    let pct = '—';
+    let subPos = 0, subTot = v;
+    for (const catKey of Object.keys(d.categories)) {
+      const cat = d.categories[catKey];
+      if (cat && cat[k] !== undefined) {
+        subPos = cat[k + '_positive'] || 0;
+        subTot = cat[k];
+        if (subTot > 0) pct = Math.round(subPos / subTot * 100) + '%';
+        break;
+      }
+    }
+    const color = v >= 20 ? 'var(--red)' : v >= 10 ? 'var(--yellow)' : 'var(--muted)';
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:12px">${k}</span>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span style="font-size:11px;color:${pct !== '—' && pct < '60' ? 'var(--red)' : 'var(--muted)'}">${pct}</span>
+        <span style="color:${color};font-weight:700;font-size:13px">${v}</span>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('topHazardsList').innerHTML = hazHtml || '<div style="color:var(--muted);text-align:center;padding:16px">—</div>';
 
-  // STOP WORK table
+  // STOP WORK table — with injury potential + status text
   const swHtml = d.stop_work.length > 0
     ? `<table style="width:100%;border-collapse:collapse;font-size:11px">
         <tr style="background:var(--surface2);font-weight:600">
           <td style="padding:6px 8px;border-bottom:1px solid var(--border)">Date</td>
           <td style="padding:6px 8px;border-bottom:1px solid var(--border)">Category</td>
           <td style="padding:6px 8px;border-bottom:1px solid var(--border)">Detail</td>
-          <td style="padding:6px 8px;border-bottom:1px solid var(--border)">Resolved</td>
+          <td style="padding:6px 8px;border-bottom:1px solid var(--border);text-align:center">Injury Pot.</td>
+          <td style="padding:6px 8px;border-bottom:1px solid var(--border);text-align:center">Status</td>
         </tr>` +
         d.stop_work.map(e => `<tr>
-          <td style="padding:5px 8px;border-bottom:1px solid var(--border)">${e.date}</td>
-          <td style="padding:5px 8px;border-bottom:1px solid var(--border);color:var(--red);font-weight:600">${e.category}</td>
-          <td style="padding:5px 8px;border-bottom:1px solid var(--border)">${e.detail}…</td>
-          <td style="padding:5px 8px;border-bottom:1px solid var(--border)">${e.resolved === 'Yes' ? '✅' : '⏳'}</td>
+          <td style="padding:5px 8px;border-bottom:1px solid var(--border);white-space:nowrap">${e.date}</td>
+          <td style="padding:5px 8px;border-bottom:1px solid var(--border);color:var(--red);font-weight:600;white-space:nowrap;font-size:11px">${e.category}</td>
+          <td style="padding:5px 8px;border-bottom:1px solid var(--border);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.detail || '—'}</td>
+          <td style="padding:5px 8px;border-bottom:1px solid var(--border);color:${e.injury_potential && e.injury_potential !== 'None' ? 'var(--yellow)' : 'var(--muted)'};font-weight:700;text-align:center">${e.injury_potential || '—'}</td>
+          <td style="padding:5px 8px;border-bottom:1px solid var(--border);color:${e.resolved === 'Yes' ? 'var(--green)' : 'var(--yellow)'};white-space:nowrap">${e.resolved === 'Yes' ? '✅ Risolto' : '⏳ Aperto'}</td>
         </tr>`).join('') + '</table>'
-    : '<div style="color:var(--muted);text-align:center;padding:16px">No STOP WORK events</div>';
+    : '<div style="color:var(--green);text-align:center;padding:14px;font-weight:600">✅ No STOP WORK events — site is safe</div>';
   document.getElementById('stopWorkTable').innerHTML = swHtml;
 
-  // Focus areas
+  // Focus areas — enriched with stats
   const fa = [];
   if (d.categories['Physical'] && d.categories['Physical']['Housekeeping']) {
     const hk = d.categories['Physical']['Housekeeping'];
-    fa.push(`<div style="margin-bottom:10px">
-      <div style="font-weight:600;color:var(--yellow)">🧹 Housekeeping — Priority 1</div>
-      <div style="color:var(--muted);font-size:12px">${hk} observations | 38% positive rate (below 60% target)</div>
+    const hkPos = d.categories['Physical']['Housekeeping_positive'] || 0;
+    const hkPct = hk > 0 ? Math.round(hkPos / hk * 100) : 0;
+    fa.push(`<div style="margin-bottom:12px;padding:10px 12px;background:rgba(234,179,8,0.06);border-radius:8px;border-left:3px solid #CA8A04">
+      <div style="font-weight:700;color:var(--yellow);font-size:13px;margin-bottom:6px">🧹 Housekeeping <span style="font-size:11px;font-weight:400;color:var(--muted)">Priority 1</span></div>
+      <div style="display:flex;gap:16px">
+        <div><span style="font-size:22px;font-weight:800;color:#CA8A04">${hk}</span><br><span style="font-size:10px;color:var(--muted)">observations</span></div>
+        <div><span style="font-size:22px;font-weight:800;color:${hkPct < 60 ? 'var(--red)' : 'var(--green)'}">${hkPct}%</span><br><span style="font-size:10px;color:var(--muted)">positive rate</span></div>
+        <div><span style="font-size:22px;font-weight:800;color:var(--muted)">${hk - hkPos}</span><br><span style="font-size:10px;color:var(--muted)">to fix</span></div>
+      </div>
     </div>`);
   }
   if (d.categories['Site Rules/Setup'] && d.categories['Site Rules/Setup']['PPE - Missing / Broken / Incorrect Storage']) {
     const ppe = d.categories['Site Rules/Setup']['PPE - Missing / Broken / Incorrect Storage'];
-    fa.push(`<div style="margin-bottom:10px">
-      <div style="font-weight:600;color:var(--red)">🪖 PPE Compliance — Priority 2</div>
-      <div style="color:var(--muted);font-size:12px">${ppe} observations | 14% positive rate (CRITICAL)</div>
+    const ppePos = d.categories['Site Rules/Setup']['PPE - Missing / Broken / Incorrect Storage_positive'] || 0;
+    const ppePct = ppe > 0 ? Math.round(ppePos / ppe * 100) : 0;
+    fa.push(`<div style="margin-bottom:12px;padding:10px 12px;background:rgba(220,38,38,0.06);border-radius:8px;border-left:3px solid #DC2626">
+      <div style="font-weight:700;color:var(--red);font-size:13px;margin-bottom:6px">🪖 PPE Compliance <span style="font-size:11px;font-weight:400;color:var(--muted)">Priority 2 — CRITICAL</span></div>
+      <div style="display:flex;gap:16px">
+        <div><span style="font-size:22px;font-weight:800;color:#DC2626">${ppe}</span><br><span style="font-size:10px;color:var(--muted)">observations</span></div>
+        <div><span style="font-size:22px;font-weight:800;color:var(--red)">${ppePct}%</span><br><span style="font-size:10px;color:var(--muted)">positive rate</span></div>
+        <div><span style="font-size:22px;font-weight:800;color:var(--muted)">${ppe - ppePos}</span><br><span style="font-size:10px;color:var(--muted)">to fix</span></div>
+      </div>
     </div>`);
   }
-  fa.push(`<div style="margin-bottom:10px">
-    <div style="font-weight:600;color:var(--yellow)">⚡ Hazardous Energy</div>
-    <div style="color:var(--muted);font-size:12px">6 observations | 17% positive rate | Electrical cabinets left open</div>
-  </div>`);
+  if (d.categories['Hazardous Energy']) {
+    const he = d.categories['Hazardous Energy'];
+    const heTot = he['_total'] || 0;
+    const hePos = he['_positive'] || 0;
+    const hePct = heTot > 0 ? Math.round(hePos / heTot * 100) : 0;
+    fa.push(`<div style="margin-bottom:12px;padding:10px 12px;background:rgba(234,179,8,0.06);border-radius:8px;border-left:3px solid #CA8A04">
+      <div style="font-weight:700;color:var(--yellow);font-size:13px;margin-bottom:6px">⚡ Hazardous Energy <span style="font-size:11px;font-weight:400;color:var(--muted)">Keep Watching</span></div>
+      <div style="display:flex;gap:16px">
+        <div><span style="font-size:22px;font-weight:800;color:#CA8A04">${heTot}</span><br><span style="font-size:10px;color:var(--muted)">observations</span></div>
+        <div><span style="font-size:22px;font-weight:800;color:${hePct < 60 ? 'var(--red)' : 'var(--green)'}">${hePct}%</span><br><span style="font-size:10px;color:var(--muted)">positive rate</span></div>
+      </div>
+    </div>`);
+  }
   document.getElementById('focusAreas').innerHTML = fa.join('');
 
-  // Monthly bar chart
+  // Monthly bar chart — Total vs Positive
   if (window.safetyMonthlyChart) window.safetyMonthlyChart.destroy();
   const mKeys = Object.keys(d.months).sort();
   const mCtx = document.getElementById('chartSafetyMonthly').getContext('2d');
@@ -1264,13 +1311,44 @@ function renderSafety() {
       datasets: [{
         label: 'Total Obs',
         data: mKeys.map(m => d.months[m].total),
-        backgroundColor: mKeys.map(m => { const r = d.months[m]; return r.total > 0 && r.positive/r.total >= 0.6 ? '#16A34A' : '#CA8A04'; })
+        backgroundColor: mKeys.map(m => { const r = d.months[m]; return r.total > 0 && r.positive/r.total >= 0.6 ? '#16A34A' : '#CA8A04'; }),
+        borderRadius: 6, borderSkipped: false
+      },
+      {
+        label: 'Positive',
+        data: mKeys.map(m => d.months[m].positive),
+        backgroundColor: 'rgba(22,163,74,0.45)',
+        borderRadius: 6, borderSkipped: false
       }]
     },
     options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: { y: { beginAtZero: true, title: { display: true, text: 'Observations' } } } }
+      plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+                tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y } } },
+      scales: { y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } }, x: { grid: { display: false } } } }
   });
+
+  // Reporter breakdown
+  const repTable = document.getElementById('reporterTable');
+  if (repTable && d.reporters) {
+    const repEntries = Object.entries(d.reporters).sort((a,b) => b[1] - a[1]);
+    repTable.innerHTML = repEntries.length > 0
+      ? `<table style="width:100%;border-collapse:collapse">
+          <tr style="background:var(--surface2);font-weight:600">
+            <td style="padding:6px 8px;border-bottom:1px solid var(--border)">Reporter</td>
+            <td style="padding:6px 8px;border-bottom:1px solid var(--border);text-align:right">Obs</td>
+            <td style="padding:6px 8px;border-bottom:1px solid var(--border);text-align:right">Share</td>
+          </tr>` +
+          repEntries.slice(0, 12).map(([name, count]) => {
+            const pct = Math.round(count / d.totals.total * 100);
+            const bar = '<div style="height:4px;background:var(--accent);opacity:.3;width:' + pct + '%;margin-top:2px"></div>';
+            return `<tr>
+              <td style="padding:5px 8px;border-bottom:1px solid var(--border);font-size:12px">${name}</td>
+              <td style="padding:5px 8px;border-bottom:1px solid var(--border);text-align:right;font-weight:700">${count}</td>
+              <td style="padding:5px 8px;border-bottom:1px solid var(--border);text-align:right;color:var(--muted)">${pct}%</td>
+            </tr>`;
+          }).join('') + '</table>'
+      : '<div style="color:var(--muted);text-align:center;padding:12px">—</div>';
+  }
 }
 
 // Load safety data and render immediately (no DOMContentLoaded dependency)
