@@ -268,6 +268,7 @@
       <div class="tab" id="tab-journal" onclick="showView('journal')">Journal</div>
       <div class="tab" id="tab-team" onclick="showView('team')">Team</div>
       <div class="tab" id="tab-progress" onclick="showView('progress')">Progress</div>
+      <div class="tab" id="tab-lessons" onclick="showView('lessons')">Lessons</div>
     </div>
   </div>
 </div>
@@ -351,6 +352,18 @@
   </div>
 
   <div class="view" id="view-progress">
+    <!-- Lessons Learned -->
+    <div class="view" id="view-lessons">
+      <div class="ll-controls" style="margin-bottom:20px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <span style="font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.8px">Filter:</span>
+        <button class="pill active" id="ll-all" onclick="filterLL('all')">All <span id="ll-count-all"></span></button>
+        <button class="pill" id="ll-high" onclick="filterLL('high')">Highest/High</button>
+        <button class="pill" id="ll-todo" onclick="filterLL('todo')">To-Do</button>
+      </div>
+      <div id="ll-table" style="font-size:13px"></div>
+    </div>
+
+  
     <div id="progressList">
       <div class="loading">Loading progress…</div>
     </div>
@@ -378,17 +391,20 @@ async function loadAll() {
       fetchJSON('daily_log.json'),
       fetchJSON('work_days.json'),
       fetchJSON('site_progress.json'),
-      fetchJSON('resource_plan.json')
+      fetchJSON('resource_plan.json'),
+      fetchJSON('lessons_learned.json')
     ]);
     DATA.dailyLog = dl;
     DATA.workDays = wd;
     DATA.siteProgress = sp;
     DATA.resourcePlan = rp;
+    DATA.lessons = ll || [];
     DATA.loaded = true;
     document.getElementById('syncTime').textContent = 'Synced ' + new Date().toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'});
     renderDashboard();
     renderJournal();
     renderTeam();
+    renderLessons();
     renderProgress();
   } catch(e) {
     console.error(e);
@@ -909,6 +925,53 @@ function renderProgress() {
 }
 
 // ── Navigation ──
+function renderLessons() {
+  const container = document.getElementById('ll-table');
+  if (!DATA.lessons || !DATA.lessons.length) {
+    container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:40px">No lessons data</div>';
+    return;
+  }
+  const entries = DATA.lessons.entries || DATA.lessons;
+  // Count by filter
+  const counts = { all: entries.length, high: entries.filter(e => ['Highest','High'].includes(e.priority)).length, todo: entries.filter(e => e.status === 'To-do').length };
+  document.getElementById('ll-count-all').textContent = '(' + counts.all + ')';
+  // Render all initially
+  filterLL('all');
+}
+
+let currentLLFilter = 'all';
+function filterLL(filter) {
+  currentLLFilter = filter;
+  const entries = (DATA.lessons.entries || DATA.lessons);
+  const filtered = filter === 'all' ? entries : filter === 'high' ? entries.filter(e => ['Highest','High'].includes(e.priority)) : entries.filter(e => e.status === 'To-do');
+  // Update pills
+  ['all','high','todo'].forEach(f => {
+    const el = document.getElementById('ll-' + f);
+    if (el) el.classList.toggle('active', f === filter);
+  });
+  // Render
+  const container = document.getElementById('ll-table');
+  if (!filtered.length) {
+    container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:30px">No entries match this filter</div>';
+    return;
+  }
+  const priorityClass = p => p === 'Highest' ? 'highest' : p === 'High' ? 'high' : p === 'Medium' ? 'medium' : p === 'To-do' ? 'todo' : 'low';
+  container.innerHTML = filtered.map(e => `
+    <div class="ll-row">
+      <div class="ll-title">
+        <span class="ll-priority ${priorityClass(e.priority)}">${e.priority}</span>
+        ${e.title}
+        <span style="float:right;font-size:11px;color:var(--muted);font-weight:400">${e.status}</span>
+      </div>
+      ${e.description ? '<div class="ll-desc">' + e.description + '</div>' : ''}
+      <div class="ll-meta">
+        ${e.assignee ? '<span class="ll-assignee">&#9679; ' + e.assignee + '</span>' : ''}
+        ${e.reporter ? '<span>&#9679; Reported by ' + e.reporter + '</span>' : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
 function showView(name) {
   document.querySelectorAll('.view, .journal-page, .team-page').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
