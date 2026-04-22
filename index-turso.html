@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EMA5 Operations — Turso</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root { --bg: #FAF7F2; --bg2: #FFFFFF; --bg3: #F0EDE8; --border: #E5DFD6; --text: #2D2418; --muted: #8C7B6E; --accent: #2563EB; --green: #16A34A; --yellow: #CA8A04; --red: #DC2626; --purple: #7C3AED; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; background: var(--bg); }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; font-size: 14px; }
+    a { color: var(--accent); text-decoration: none; }
+
+    .topbar { position: sticky; top: 0; z-index: 50; background: var(--bg); border-bottom: 1px solid var(--border); padding: 0 32px; height: 56px; display: flex; align-items: center; justify-content: space-between; }
+    .site-name { font-size: 15px; font-weight: 600; letter-spacing: -0.3px; }
+    .site-name span { color: var(--muted); font-weight: 300; }
+    .sync-time { font-size: 12px; color: var(--muted); }
+    .tabs { display: flex; gap: 4px; }
+    .tab { padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--muted); border: 1px solid transparent; transition: all 0.15s; }
+    .tab:hover { color: var(--accent); }
+    .tab.active { background: var(--bg2); color: var(--accent); border-color: var(--border); }
+
+    .content { max-width: 900px; margin: 0 auto; padding: 32px 24px 80px; }
+
+    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
+    .stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; }
+    .stat-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin-bottom: 4px; }
+    .stat-value { font-size: 26px; font-weight: 700; }
+    .stat-value.accent { color: var(--accent); }
+    .stat-value.red { color: var(--red); }
+
+    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 28px; }
+    .chart-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+    .chart-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin-bottom: 12px; }
+    .chart-wrap { height: 180px; position: relative; }
+
+    .month-group { margin-bottom: 40px; }
+    .month-label { font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); padding-bottom: 12px; border-bottom: 1px solid var(--border); margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center; }
+    .month-count { font-size: 11px; font-weight: 400; letter-spacing: 0; text-transform: none; }
+
+    .day-entry { padding: 20px 0; border-bottom: 1px solid rgba(229,223,214,0.5); }
+    .day-entry:last-child { border-bottom: none; }
+    .day-header { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 12px; }
+    .day-date-block { min-width: 48px; text-align: center; }
+    .day-date-num { font-size: 22px; font-weight: 700; line-height: 1; }
+    .day-date-weekday { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .props { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .prop { display: inline-flex; align-items: center; gap: 4px; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 3px 8px; font-size: 12px; }
+    .prop.green { background: rgba(22,163,74,0.08); border-color: rgba(22,163,74,0.2); }
+    .prop.red { background: rgba(220,38,38,0.08); border-color: rgba(220,38,38,0.2); }
+    .prop-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); }
+    .prop-value { font-weight: 600; }
+    .prop.green .prop-value { color: var(--green); }
+    .prop.red .prop-value { color: var(--red); }
+
+    .section { margin-bottom: 10px; }
+    .section-label { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); margin-bottom: 4px; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .section-content { font-size: 13px; color: var(--text); padding-left: 12px; }
+    .section-content .activity-item { display: inline-block; background: var(--bg3); border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px; margin: 2px 4px 2px 0; font-size: 12px; }
+
+    .filter-label { font-size: 12px; font-weight: 500; color: var(--muted); margin-right: 8px; }
+    .pill { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; cursor: pointer; color: var(--muted); background: var(--bg3); border: 1px solid transparent; margin: 2px; transition: all 0.15s; }
+    .pill:hover { color: var(--accent); }
+    .pill.active { background: var(--accent); color: white; }
+
+    .view { display: none; }
+    .view.active { display: block; }
+    .loading { text-align: center; padding: 40px; color: var(--muted); font-size: 14px; }
+    .error-msg { background: rgba(220,38,38,0.08); border: 1px solid rgba(220,38,38,0.2); border-radius: 8px; padding: 16px; color: var(--red); font-size: 13px; }
+    .entry-footer { font-size: 11px; color: var(--muted); margin-top: 8px; font-style: italic; }
+
+    .team-dept { margin-bottom: 24px; }
+    .dept-header { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); padding: 8px 0; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+    .dept-count { font-size: 11px; font-weight: 400; text-transform: none; letter-spacing: 0; margin-left: 8px; }
+    .person-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; padding: 8px 0; border-bottom: 1px solid rgba(229,223,214,0.4); font-size: 13px; }
+    .person-name { font-weight: 600; }
+    .person-qual { color: var(--muted); }
+    .person-company { color: var(--muted); text-align: right; }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="site-name">EMA5 <span>// Turso DB</span></div>
+    </div>
+    <div class="topbar-right">
+      <div class="sync-time" id="syncTime">Connecting...</div>
+      <div class="tabs">
+        <div class="tab active" id="tab-journal" onclick="showView('journal')">Journal</div>
+        <div class="tab" id="tab-team" onclick="showView('team')">Team</div>
+        <div class="tab" id="tab-progress" onclick="showView('progress')">Progress</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- Journal view -->
+    <div class="view active" id="view-journal">
+      <div class="stats-row" id="statsRow"></div>
+      <div id="monthFilter" style="margin-bottom:20px"></div>
+      <div id="journalEntries"></div>
+    </div>
+
+    <!-- Team view -->
+    <div class="view" id="view-team">
+      <div id="teamContent"></div>
+    </div>
+
+    <!-- Progress view -->
+    <div class="view" id="view-progress">
+      <div id="progressContent"></div>
+    </div>
+  </div>
+
+<script>
+// ── Turso config ──────────────────────────────────────────────────
+const TURSO_DB = 'https://ema5-cleo.aws-eu-west-1.turso.io';
+const TURSO_TOKEN = 'eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzY4NzQ5MDQsImlkIjoiMDE5ZGI1ZmYtMTgwMS03NjQ0LTg1MWYtNzYwYjIxYmEwY2M3IiwicmlkIjoiMzViNWFiZDctMDVhMy00MGQyLTkyMDgtMzQyODYxZGVkMTRhIn0.elg3ZXmgS4oEVhzIpS-W2PDqi18CEavcuxG335Lu2fxAdbvUPD178ArjrLW-kZo2HrOgawDUjlojA1XGyUCKCQ';
+
+function tursoRowsToObjects(result) {
+  var cols = result.cols.map(function(c) { return c.name; });
+  return result.rows.map(function(row) {
+    var obj = {};
+    cols.forEach(function(col, i) {
+      var v = row[i];
+      obj[col] = (v && typeof v === 'object' && v.type) ? v.value : v;
+    });
+    return obj;
+  });
+}
+
+async function tursoQuery(sql) {
+  var payload = JSON.stringify({ stmt: { sql: sql, args: [] } });
+  var r = await fetch(TURSO_DB + '/v1/execute', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + TURSO_TOKEN, 'Content-Type': 'application/json' },
+    body: payload
+  });
+  if (!r.ok) throw new Error(r.status + ' ' + r.statusText + ' — ' + await r.text());
+  var json = await r.json();
+  if (json.error) throw new Error('Turso error: ' + json.error);
+  return json.result;
+}
+
+var DATA = { dailyLog: [], workDays: [], siteProgress: [], team: [], loaded: false };
+var charts = {};
+
+async function loadAll() {
+  try {
+    var dl = await tursoQuery('SELECT date, day, presenze, north_status, south_status, blockers, actions, notes FROM daily_log ORDER BY date DESC');
+    var res = await tursoQuery('SELECT date, role, name, team, hours_plan, hours_actual FROM resources ORDER BY date DESC');
+    var ship = await tursoQuery('SELECT date, inbound_units, outbound_units, dispatch_count, notes FROM shipments ORDER BY date DESC');
+    DATA.dailyLog = tursoRowsToObjects(dl);
+    DATA.workDays = [];
+    DATA.siteProgress = tursoRowsToObjects(ship);
+    DATA.team = tursoRowsToObjects(res);
+    DATA.loaded = true;
+    document.getElementById('syncTime').textContent = 'Synced ' + new Date().toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'});
+    renderAll();
+  } catch(e) {
+    document.getElementById('journalEntries').innerHTML = '<div class="error-msg">Error loading: ' + e.message + '</div>';
+    document.getElementById('syncTime').textContent = 'Error';
+  }
+}
+
+function parseDateISO(s) {
+  if (!s || typeof s !== 'string') return null;
+  var parts = s.split('-');
+  if (parts.length !== 3) return null;
+  return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+}
+
+function parseDateDMY(s) { return parseDateISO(s); }
+
+function computeShiftsByDate(rows) {
+  var map = {};
+  rows.forEach(function(r) {
+    var d = parseDateISO(r.date);
+    if (!d) return;
+    var k = d.toISOString().slice(0, 10);
+    if (!map[k]) map[k] = { total: 0 };
+    map[k].total += r.presenze || 0;
+  });
+  return map;
+}
+
+function delayHours(delays) {
+  if (!delays) return 0;
+  var m = String(delays).match(/(\d+)h?/i);
+  return m ? parseInt(m[1]) : 0;
+}
+
+function esc(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderAll() {
+  renderStats();
+  renderJournal();
+  renderTeam();
+  renderProgress();
+}
+
+// ── Stats ──────────────────────────────────────────────────────
+function renderStats() {
+  var shifts = computeShiftsByDate(DATA.dailyLog);
+  var dates = Object.keys(shifts).sort();
+  var today = new Date().toISOString().slice(0, 10);
+  var yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  var todayHC = shifts[today] || shifts[yesterday] || { total: 0 };
+  var totalDays = dates.length;
+  var totalEntries = DATA.dailyLog.length;
+  var totalPresenze = Object.values(shifts).reduce(function(s, v) { return s + v.total; }, 0);
+  var avgPres = totalDays > 0 ? Math.round(totalPresenze / totalDays) : 0;
+
+  var cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 30);
+  var blockersCount = 0;
+  DATA.dailyLog.forEach(function(r) {
+    var d = parseDateISO(r.date);
+    if (d && d >= cutoff && r.blockers) blockersCount++;
+  });
+
+  document.getElementById('statsRow').innerHTML =
+    '<div class="stat-card"><div class="stat-label">Headcount Today</div><div class="stat-value accent">' + (todayHC.total || '-') + '</div><div class="stat-label" style="margin-top:4px">Avg: ' + avgPres + '</div></div>' +
+    '<div class="stat-card"><div class="stat-label">Work Days</div><div class="stat-value">' + totalDays + '</div></div>' +
+    '<div class="stat-card"><div class="stat-label">Journal Entries</div><div class="stat-value">' + totalEntries + '</div></div>' +
+    '<div class="stat-card"><div class="stat-label">Blockers (30d)</div><div class="stat-value red">' + blockersCount + '</div></div>';
+}
+
+// ── Charts ──────────────────────────────────────────────────────
+function renderCharts() {
+  Object.values(charts).forEach(function(c) { try { c.destroy(); } catch(e) {} });
+  charts = {};
+}
+
+// ── Journal ─────────────────────────────────────────────────────
+function renderJournal(monthKey) {
+  if (monthKey === undefined) monthKey = 'all';
+
+  var months = {};
+  DATA.dailyLog.forEach(function(r) {
+    var d = parseDateISO(r.date);
+    if (!d) return;
+    var k = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    if (!months[k]) months[k] = d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+  });
+  var monthKeys = Object.keys(months).sort().reverse();
+  var firstMonth = monthKeys[0] || 'all';
+  var current = monthKey === 'all' ? firstMonth : monthKey;
+
+  var filterEl = document.getElementById('monthFilter');
+  var monthHtml = '<span class="filter-label">Month:</span>';
+  monthKeys.forEach(function(k) {
+    monthHtml += '<div class="pill ' + (k === current ? 'active' : '') + '" onclick="setJournalMonth(\'' + k + '\', this)">' + months[k] + '</div>';
+  });
+  monthHtml += '<div class="pill ' + (monthKey === 'all' ? 'active' : '') + '" onclick="setJournalMonth(\'all\', this)">All time</div>';
+  filterEl.innerHTML = monthHtml;
+
+  var filtered = monthKey === 'all' ? DATA.dailyLog : DATA.dailyLog.filter(function(r) {
+    var d = parseDateISO(r.date);
+    if (!d) return false;
+    var k = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    return k === current;
+  });
+
+  var byMonth = {};
+  filtered.forEach(function(r) {
+    var d = parseDateISO(r.date);
+    if (!d) return;
+    var mk = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    var ml = d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+    if (!byMonth[mk]) byMonth[mk] = { label: ml, entries: [] };
+    byMonth[mk].entries.push({ _d: d, r: r });
+  });
+
+  var container = document.getElementById('journalEntries');
+  if (!Object.keys(byMonth).length) { container.innerHTML = '<div class="loading">No entries found.</div>'; return; }
+
+  var shifts = computeShiftsByDate(DATA.dailyLog);
+
+  var html = '';
+  Object.entries(byMonth).sort(function(a, b) { return b[0].localeCompare(a[0]); }).forEach(function(entry) {
+    var mk = entry[0];
+    var monthData = entry[1];
+    html += '<div class="month-group"><div class="month-label">' + monthData.label + ' <span class="month-count">' + monthData.entries.length + ' entries</span></div>';
+
+    monthData.entries.forEach(function(item) {
+      var r = item.r;
+      var d = item._d;
+      var dk = d.toISOString().slice(0, 10);
+      var sh = shifts[dk] || { total: 0 };
+      var north = (r.north_status || '').trim();
+      var south = (r.south_status || '').trim();
+      var blockers = (r.blockers || '').trim();
+      var actions = (r.actions || '').trim();
+      var notes = (r.notes || '').trim();
+
+      html += '<div class="day-entry">' +
+        '<div class="day-header">' +
+          '<div class="day-date-block">' +
+            '<div class="day-date-num">' + d.getDate() + '</div>' +
+            '<div class="day-date-weekday">' + d.toLocaleDateString('en-GB', { weekday: 'short' }) + '</div>' +
+          '</div>' +
+          '<div class="props">' +
+            (sh.total > 0 ? '<div class="prop green"><span class="prop-label">HC</span><span class="prop-value">' + sh.total + '</span></div>' : '') +
+            (r.day ? '<div class="prop"><span class="prop-label">Day</span><span class="prop-value">' + esc(r.day) + '</span></div>' : '') +
+          '</div>' +
+        '</div>' +
+        (north ? '<div class="section"><div class="section-label"><div class="dot" style="background:#2563EB"></div>North Zone</div><div class="section-content">' + esc(north) + '</div></div>' : '') +
+        (south ? '<div class="section"><div class="section-label"><div class="dot" style="background:#16A34A"></div>South Zone</div><div class="section-content">' + esc(south) + '</div></div>' : '') +
+        (blockers ? '<div class="section"><div class="section-label"><div class="dot" style="background:#DC2626"></div>Blockers</div><div class="section-content" style="color:var(--red)">' + esc(blockers) + '</div></div>' : '') +
+        (actions ? '<div class="section"><div class="section-label"><div class="dot" style="background:#CA8A04"></div>Actions</div><div class="section-content">' + esc(actions) + '</div></div>' : '') +
+        (notes ? '<div class="section"><div class="section-label"><div class="dot" style="background:#64748b"></div>Notes</div><div class="section-content">' + esc(notes) + '</div></div>' : '') +
+      '</div>';
+    });
+
+    html += '</div>';
+  });
+
+  container.innerHTML = html;
+}
+
+var currentJournalMonth = 'all';
+function setJournalMonth(key, el) {
+  document.querySelectorAll('.pill').forEach(function(p) { p.classList.remove('active'); });
+  el.classList.add('active');
+  currentJournalMonth = key;
+  renderJournal(key);
+}
+
+// ── Team ────────────────────────────────────────────────────────
+function renderTeam() {
+  if (!DATA.team.length) {
+    document.getElementById('teamContent').innerHTML = '<div class="loading">No team data in Turso yet.</div>';
+    return;
+  }
+  var byTeam = {};
+  DATA.team.forEach(function(r) {
+    var team = r.team || 'Other';
+    if (!byTeam[team]) byTeam[team] = [];
+    byTeam[team].push(r);
+  });
+  var html = '';
+  Object.keys(byTeam).sort().forEach(function(team) {
+    html += '<div class="team-dept"><div class="dept-header">' + esc(team) + ' <span class="dept-count">' + byTeam[team].length + '</span></div>';
+    byTeam[team].forEach(function(p) {
+      html += '<div class="person-row">' +
+        '<div class="person-name">' + esc(p.name || '') + '</div>' +
+        '<div class="person-qual">' + esc(p.role || '') + '</div>' +
+        '<div class="person-company">' + (p.hours_actual ? p.hours_actual + 'h' : '-') + '</div>' +
+      '</div>';
+    });
+    html += '</div>';
+  });
+  document.getElementById('teamContent').innerHTML = html || '<div class="loading">No team data.</div>';
+}
+
+// ── Progress ─────────────────────────────────────────────────────
+function renderProgress() {
+  var items = DATA.siteProgress;
+  if (!items.length) {
+    document.getElementById('progressContent').innerHTML = '<div class="loading">No shipment data yet. Populate the shipments table in Turso.</div>';
+    return;
+  }
+  var html = '<div class="month-label" style="margin-bottom:16px">Shipments</div><div style="display:grid;gap:10px">';
+  items.slice(0, 30).forEach(function(r) {
+    var d = parseDateISO(r.date);
+    html += '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px">' +
+      '<div style="font-size:13px;font-weight:500;margin-bottom:8px">' + (d ? d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) : esc(r.date || '')) + '</div>' +
+      '<div style="display:flex;gap:16px;font-size:12px;color:var(--muted)">' +
+        (r.inbound_units ? '<span>Inbound: <strong>' + r.inbound_units + '</strong></span>' : '') +
+        (r.outbound_units ? '<span>Outbound: <strong>' + r.outbound_units + '</strong></span>' : '') +
+        (r.dispatch_count ? '<span>Dispatch: <strong>' + r.dispatch_count + '</strong></span>' : '') +
+        (r.notes ? '<span>' + esc(r.notes) + '</span>' : '') +
+      '</div>' +
+    '</div>';
+  });
+  html += '</div>';
+  document.getElementById('progressContent').innerHTML = html;
+}
+
+// ── Navigation ──────────────────────────────────────────────────
+function showView(name) {
+  document.querySelectorAll('.view').forEach(function(v) { v.classList.remove('active'); });
+  document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+  document.getElementById('view-' + name).classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+loadAll();
+</script>
+</body>
+</html>
