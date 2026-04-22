@@ -288,11 +288,6 @@
         <div id="kpi-hc-fresh" style="font-size:10px;color:var(--muted);margin-top:4px"></div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">⬤ Total Shifts Recorded</div>
-        <div class="kpi-value green" id="kpi-wd">—</div>
-        <div class="kpi-sub">4,587 records</div>
-      </div>
-      <div class="kpi-card">
         <div class="kpi-label">⬤ Total Downtime (Project)</div>
         <div class="kpi-value red" id="kpi-dt">—</div>
         <div class="kpi-sub" id="kpi-dt-sub">Since 5 Jan 2026</div>
@@ -608,9 +603,7 @@ function renderKPIs() {
     freshEl.innerHTML = '';
   }
 
-  // Work days on site
-  document.getElementById('kpi-wd').textContent = DATA.workDays.length.toLocaleString();
-
+  // Work days on site — removed (card retired)
   // Downtime — total from project start (5 Jan 2026)
   let totalDowntime = 0;
   const projStart = new Date('2026-01-05');
@@ -701,24 +694,132 @@ function renderCharts() {
     });
   }
 
-  // Delays by cause — full project period (no 30d cutoff)
+// ── Delay Buckets — Since First Daily Log Entry ──
+  function delayCauseBucket(text) {
+    if (!text) return null;
+    const t = text.toLowerCase();
+    if (t.includes('sintec')) return '⚠️ Sintec Issues';
+    if (t.includes('power') || t.includes('outage') || t.includes('cabinet') || t.includes('ceetech') || t.includes('ian thomas') || t.includes('waiting for power')) return '⚡ Power / Electrical';
+    if (t.includes('fencing') || t.includes('no access') || t.includes('limited access') || t.includes('blocked access') || (t.includes('no lifting') && t.includes('past'))) return '🚧 Access / Fencing';
+    if (t.includes('material blocking') || t.includes('laydown') || t.includes('southeast area not ready') || t.includes('material from nw')) return '📦 Material / Storage';
+    if (t.includes('steel') || t.includes('structure') || (t.includes('mitek') && (t.includes('material') || t.includes('beams') || t.includes('hanger clash'))) || t.includes('maintenance platform')) return '🔩 Steelwork / Structure';
+    if (t.includes('mitek')) return '🏭 Mitek Delays';
+    if (t.includes('dematic') && t.includes('not ready')) return '🏭 Dematic Delays';
+    if (t.includes('fire') || t.includes('standown') || t.includes('safety device')) return '🦺 Safety Standown';
+    if (t.includes('flts not approved') || t.includes('flts') || t.includes('lifting plan') || t.includes('lifting') && (t.includes('plan') || t.includes('not'))) return '🏗️ Lifting / FLT Approval';
+    if (t.includes('induction') || t.includes('winvic')) return '📋 Admin / Induction';
+    if (t.includes('delivery') || t.includes('alps')) return '📦 Logistics';
+    if (t.includes('stair') || t.includes('m17 check')) return '🔧 Site Condition';
+    if (t.includes('tape') || t.includes('dust')) return '🔧 Rework / Quality';
+    if (t.includes('sorter') || t.includes('xbelt') || t.includes('m41') || t.includes('m36')) return '🔧 Sorter Installation';
+    return null;
+  }
+
   if (charts.delay) charts.delay.destroy();
-  const byCause = {};
+  const byBucket = {};
+  // Find first entry date from daily log
+  let firstEntry = null;
+  DATA.dailyLog.forEach(r => {
+    const d = parseDateDMY(r.Date || r.date);
+    if (d && (!firstEntry || d < firstEntry)) firstEntry = d;
+  });
+  
   DATA.dailyLog.forEach(r => {
     const h = delayHours(r.Delays || r.delays);
     if (h > 0) {
-      const cause = String(r.Delays || r.delays || '').trim().split('.')[0].trim() || 'Other';
-      byCause[cause] = (byCause[cause] || 0) + h;
+      const text = String(r.Delays || r.delays || '');
+      const bucket = delayCauseBucket(text);
+      if (bucket) {
+        byBucket[bucket] = (byBucket[bucket] || 0) + h;
+      } else {
+        byBucket['📋 Other'] = (byBucket['📋 Other'] || 0) + h;
+      }
     }
   });
-  const sorted = Object.entries(byCause).sort((a, b) => b[1] - a[1]).slice(0, 8);
-  if (sorted.length > 0) {
-    const colors = ['#f87171','#fb923c','#facc15','#4ade80','#38bdf8','#c084fc','#f472b6','#a78bfa'];
+
+  const sortedBuckets = Object.entries(byBucket).sort((a, b) => b[1] - a[1]);
+  const totalDelayHours = sortedBuckets.reduce((s, [, h]) => s + h, 0);
+  
+  // Build chart
+  if (sortedBuckets.length > 0) {
+    const bucketColors = {
+      '⚠️ Sintec Issues': '#DC2626',
+      '⚡ Power / Electrical': '#7C3AED',
+      '🚧 Access / Fencing': '#CA8A04',
+      '📦 Material / Storage': '#D97706',
+      '🔩 Steelwork / Structure': '#DC2626',
+      '🏭 Mitek Delays': '#EA580C',
+      '🏭 Dematic Delays': '#EA580C',
+      '🦺 Safety Standown': '#DC2626',
+      '🏗️ Lifting / FLT Approval': '#2563EB',
+      '📋 Admin / Induction': '#0891B2',
+      '📦 Logistics': '#059669',
+      '🔧 Site Condition': '#CA8A04',
+      '🔧 Rework / Quality': '#CA8A04',
+      '🔧 Sorter Installation': '#CA8A04',
+      '📋 Other': '#6B7280'
+    };
+    
+    const colors = sortedBuckets.map(([b]) => bucketColors[b] || '#6B7280');
+    const pctShare = sortedBuckets.map(([, h]) => Math.round(h / totalDelayHours * 100));
+    
     charts.delay = new Chart(document.getElementById('chartDelay'), {
       type: 'bar',
-      data: { labels: sorted.map(([c]) => c.length > 25 ? c.slice(0, 25) + '…' : c), datasets: [{ data: sorted.map(([,h]) => h), backgroundColor: sorted.map((_, i) => colors[i % colors.length]) }] },
-      options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, title: { display: true, text: 'Hours' } } } }
+      data: {
+        labels: sortedBuckets.map(([b]) => b),
+        datasets: [{
+          data: sortedBuckets.map(([, h]) => h),
+          backgroundColor: colors,
+          borderRadius: 6,
+          borderSkipped: false,
+          barThickness: 20
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: 'y',
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => {
+                const h = ctx.parsed.x;
+                const pct = pctShare[ctx.dataIndex];
+                return ' ' + h + 'h lost (' + pct + '%)';
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            beginAtZero: true,
+            title: { display: true, text: 'Hours Lost' },
+            grid: { color: 'rgba(0,0,0,0.04)' }
+          },
+          y: {
+            grid: { display: false },
+            ticks: { font: { size: 11 } }
+          }
+        }
+      }
     });
+    
+    // Also add a summary table below the chart
+    const delaySummaryEl = document.getElementById('delaySummary');
+    if (delaySummaryEl) {
+      delaySummaryEl.innerHTML = '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:8px">' +
+        sortedBuckets.map(([b, h]) => {
+          const pct = Math.round(h / totalDelayHours * 100);
+          const color = bucketColors[b] || '#6B7280';
+          return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:rgba(0,0,0,0.03);border-radius:6px;border-left:3px solid ' + color + '">' +
+            '<span style="font-size:11px;font-weight:600">' + b + '</span>' +
+            '<div><span style="font-size:12px;font-weight:800;color:' + color + '">' + h + 'h</span> <span style="font-size:10px;color:var(--muted)">' + pct + '%</span></div></div>';
+        }).join('') + '</div>';
+    }
+  } else {
+    const delaySummaryEl = document.getElementById('delaySummary');
+    if (delaySummaryEl) delaySummaryEl.innerHTML = '<div style="color:var(--green);font-size:13px;text-align:center;padding:16px">✅ No delays recorded — site running clean</div>';
   }
 
   // Progress overview by PLC area
