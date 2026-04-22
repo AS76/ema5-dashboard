@@ -356,7 +356,7 @@
   </div>
 
   <!-- === SAFETY === -->
-  <div id="view-safety" class="view" style="display:none">
+  <div id="view-safety" class="view">
     <div class="section-header" style="margin-bottom:20px;padding:16px 20px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius)">
       <img src="assets/tgw-logo.png" alt="TGW" style="height:36px;margin-right:12px;border-radius:4px;vertical-align:middle">
       <div style="display:inline-block;vertical-align:middle">
@@ -1273,12 +1273,11 @@ function renderSafety() {
   });
 }
 
-window.addEventListener('DOMContentLoaded', () => {
-  fetch('assets/safety_data.json').then(r => r.json()).then(data => {
-    window.SAFETY_DATA = data;
-    renderSafety();
-  }).catch(e => console.warn('Safety data not loaded:', e));
-});
+// Load safety data and render immediately (no DOMContentLoaded dependency)
+fetch('assets/safety_data.json').then(r => r.json()).then(data => {
+  window.SAFETY_DATA = data;
+  renderSafety();
+}).catch(e => console.warn('Safety data not loaded:', e));
 </script>
 </body>
 </html>
