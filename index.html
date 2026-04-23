@@ -418,34 +418,22 @@ async function tursoQuery(sql) {
 }
 
 async function loadAll() {
-  // Test fetch basic
-  console.log('loadAll start — TURSO_DB:', TURSO_DB);
-  console.log('TURSO_TOKEN prefix:', TURSO_TOKEN.slice(0,20));
   try {
-    var test = await fetch(TURSO_DB + '/v1/execute', {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + TURSO_TOKEN, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ stmt: { sql: 'SELECT 1 as test', args: [] } })
-    });
-    console.log('Test fetch status:', test.status, test.ok);
-    var testJson = await test.json();
-    console.log('Test fetch result:', JSON.stringify(testJson).slice(0,100));
-  } catch(e) {
-    console.error('Test fetch failed:', e.message);
-  }
-  try {
-    var dl   = await tursoQuery('SELECT * FROM daily_log ORDER BY "Date" DESC');
-    var wd   = await tursoQuery('SELECT * FROM work_days ORDER BY "Date" DESC');
-    var sp   = await tursoQuery('SELECT * FROM site_progress ORDER BY "Section","Description"');
-    var rp   = await tursoQuery('SELECT * FROM resource_plan ORDER BY year, week_num');
-    var inc  = await tursoQuery('SELECT * FROM incidents ORDER BY obs_date DESC, obs_time DESC');
-    DATA.dailyLog    = tursoRows(dl);
-    DATA.workDays    = tursoRows(wd);
+    // Run all queries in parallel for maximum speed
+    var [dl, wd, sp, rp, inc, dev] = await Promise.all([
+      tursoQuery('SELECT * FROM daily_log ORDER BY "Date" DESC'),
+      tursoQuery('SELECT * FROM work_days ORDER BY "Date" DESC'),
+      tursoQuery('SELECT * FROM site_progress ORDER BY "Section","Description"'),
+      tursoQuery('SELECT * FROM resource_plan ORDER BY year, week_num'),
+      tursoQuery('SELECT * FROM incidents ORDER BY obs_date DESC, obs_time DESC'),
+      tursoQuery('SELECT * FROM deviations')
+    ]);
+    DATA.dailyLog     = tursoRows(dl);
+    DATA.workDays     = tursoRows(wd);
     DATA.siteProgress = tursoRows(sp);
     DATA.resourcePlan = tursoRows(rp);
-    DATA.incidents   = tursoRows(inc);
-    var dev = await tursoQuery('SELECT * FROM deviations');
-    DATA.deviations = tursoRows(dev);
+    DATA.incidents    = tursoRows(inc);
+    DATA.deviations   = tursoRows(dev);
     DATA.loaded = true;
     document.getElementById('syncTime').textContent = 'Synced ' + new Date().toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'});
     renderAll();
