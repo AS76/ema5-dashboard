@@ -245,18 +245,28 @@
   <div class="content">
     <!-- OVERVIEW -->
     <div class="view active" id="view-overview">
-      <div class="stats-row" id="statsRow"></div>
-      <div class="charts-row">
-        <div class="chart-card">
-          <div class="chart-title">Daily Headcount — Last 14 Days</div>
-          <div class="chart-wrap"><canvas id="chartHC"></canvas></div>
+      <div class="hero-section">
+        <div class="hero-kpi-grid" id="heroKPIs"></div>
+        <div class="snapshot-bar" id="snapshotBar"></div>
+      </div>
+      <div class="trend-grid">
+        <div class="trend-chart-card">
+          <div class="trend-chart-title">Headcount — 14 Day Trend</div>
+          <div class="trend-chart-wrap"><canvas id="chartHCTrend"></canvas></div>
         </div>
-        <div class="chart-card">
-          <div class="chart-title">Progress Overview</div>
-          <div class="chart-wrap"><canvas id="chartProgress"></canvas></div>
+        <div class="trend-chart-card">
+          <div class="trend-chart-title">Completion % — 14 Day Trend</div>
+          <div class="trend-chart-wrap"><canvas id="chartCompletionTrend"></canvas></div>
+        </div>
+        <div class="trend-chart-card">
+          <div class="trend-chart-title">Progress by Section</div>
+          <div class="trend-chart-wrap"><canvas id="chartProgressSection"></canvas></div>
+        </div>
+        <div class="trend-chart-card">
+          <div class="trend-chart-title">Safety Trend — Last 30 Days</div>
+          <div class="trend-chart-wrap"><canvas id="chartSafetyTrend"></canvas></div>
         </div>
       </div>
-      <div id="overviewRecent"></div>
     </div>
 
     <!-- JOURNAL -->
@@ -417,7 +427,7 @@ async function loadAll() {
     renderAll();
   } catch(e) {
     document.getElementById('syncTime').textContent = 'Error';
-    document.getElementById('statsRow').innerHTML = '<div class="error-msg" style="grid-column:1/-1">Connection failed: ' + esc(e.message) + '</div>';
+    // removed.innerHTML = '<div class="error-msg" style="grid-column:1/-1">Connection failed: ' + esc(e.message) + '</div>';
   }
 }
 
@@ -427,8 +437,7 @@ function esc(s) {
 }
 
 function renderAll() {
-  renderStats();
-  renderOverview();
+  renderHeroKPIs();
   renderJournal();
   renderHeadcount();
   renderProgress();
@@ -439,84 +448,181 @@ function renderAll() {
 }
 
 // ── Stats / Overview ──────────────────────────────────────────────
-function renderStats() {
+function renderHeroKPIs() {
   var shifts = computeHCByDate(DATA.workDays);
   var dates = Object.keys(shifts).sort();
-  var today = new Date().toISOString().slice(0, 10);
-  var yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-  var todayHC = shifts[today] || shifts[yesterday] || { total: 0 };
-  var last14avg = dates.slice(-14).reduce(function(s,d){return s+(shifts[d]?shifts[d].total:0);},0) / Math.min(dates.length, 14);
-  var totalProgress = DATA.siteProgress.length;
-  var doneProgress = DATA.siteProgress.filter(function(r) { return (r.Progress || 0) >= 80; }).length;
+  var today = new Date().toISOString().slice(0,10);
+  var yesterday = new Date(Date.now() - 86400000).toISOString().slice(0,10);
 
-  document.getElementById('statsRow').innerHTML =
-    '<div class="stat-card"><div class="stat-label">Headcount Today</div><div class="stat-value accent">' + (todayHC.total || '-') + '</div><div class="stat-sub">Avg 14d: ' + Math.round(last14avg) + '</div></div>' +
-    '<div class="stat-card"><div class="stat-label">Journal Entries</div><div class="stat-value">' + DATA.dailyLog.length + '</div><div class="stat-sub">Mar–Apr 2026</div></div>' +
-    '<div class="stat-card"><div class="stat-label">Progress Items</div><div class="stat-value">' + totalProgress + '</div><div class="stat-sub">' + doneProgress + ' ≥80%</div></div>' +
-    '<div class="stat-card"><div class="stat-label">Incidents (Safety)</div><div class="stat-value">' + DATA.incidents.length + '</div><div class="stat-sub">Hazard observations</div></div>';
+  var todayHC = shifts[today] || shifts[yesterday] || { total: 0 };
+  var last14 = dates.slice(-14);
+  var last7 = last14.slice(-7);
+  var prev7 = last14.slice(-14, -7);
+  var avgThisWeek = last7.reduce(function(s,d){return s+(shifts[d]?shifts[d].total:0);},0) / Math.max(last7.length,1);
+  var avgLastWeek = prev7.reduce(function(s,d){return s+(shifts[d]?shifts[d].total:0);},0) / Math.max(prev7.length,1);
+  var hcChange = avgThisWeek - avgLastWeek;
+  var hcTrend = hcChange > 5 ? 'up' : hcChange < -5 ? 'down' : 'neutral';
+  var hcTrendIcon = hcTrend === 'up' ? '↑' : hcTrend === 'down' ? '↓' : '→';
+
+  var completionVals = DATA.siteProgress.filter(function(r){ return r['Progress'] != null; }).map(function(r){ return parseFloat(r['Progress']); });
+  var completion = completionVals.length ? Math.round(completionVals.reduce(function(s,v){return s+v;},0)/completionVals.length) : 0;
+
+  var openDev = DATA.deviations.filter(function(d){ return String(d['Deviation Status']||'').startsWith('01') || String(d['Deviation Status']||'').startsWith('02'); });
+  var overdueDev = DATA.deviations.filter(function(d){
+    var due = d['Due Date'];
+    if (!due) return false;
+    var dueStr = typeof due === 'string' ? due.slice(0,10) : null;
+    return dueStr && dueStr < today && !String(d['Deviation Status']||'').startsWith('05');
+  });
+
+  var openInc = DATA.incidents.filter(function(d){ return !d['resolved'] && d['resolved'] !== 0; });
+
+  // Snapshot from daily_log
+  var todayEntry = DATA.dailyLog.find(function(e){ return e['Date'] === today || e['Date'] === yesterday; }) || {};
+  var weather = todayEntry['Weather Condition'] || '';
+  var temp = todayEntry['Temperature °C'] || '';
+  var notes = (todayEntry['Notes'] || '').substring(0,100);
+  var visitors = todayEntry['Visitors on Site'] || '';
+  var hse = todayEntry['HSE Activities'] || '';
+  var delays = todayEntry['Delays'] || '';
+
+  var snapItems = [];
+  if (weather) snapItems.push('<div class="snapshot-item"><span class="snapshot-label">☁</span> ' + esc(weather) + (temp ? ' ' + temp + '°C' : '') + '</div>');
+  if (visitors) snapItems.push('<div class="snapshot-item"><span class="snapshot-label">👥</span> ' + esc(visitors) + '</div>');
+  if (hse) snapItems.push('<div class="snapshot-item"><span class="snapshot-label">🛡</span> ' + esc(hse) + '</div>');
+  if (delays) snapItems.push('<div class="snapshot-item"><span class="snapshot-label">⏱</span> ' + esc(delays) + '</div>');
+  if (notes) snapItems.push('<div class="snapshot-item"><span class="snapshot-label">📋</span> <strong>' + esc(notes) + '</strong></div>');
+  document.getElementById('snapshotBar').innerHTML = snapItems.length ? snapItems.join('<div class="snapshot-sep"></div>') : '<div class="snapshot-item">No daily log entry for today</div>';
+
+  var kpiHtml =
+    '<div class="hero-kpi hc">' +
+      '<div class="hero-kpi-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>' +
+      '<div class="hero-kpi-label">Headcount Today</div>' +
+      '<div class="hero-kpi-value">' + (todayHC.total || '-') +
+        '<span class="hero-kpi-trend ' + hcTrend + '">' + hcTrendIcon + ' ' + Math.abs(Math.round(hcChange)) + '</span>' +
+      '</div>' +
+      '<div class="hero-kpi-sub">Avg this week: <strong>' + Math.round(avgThisWeek) + '</strong> vs last: ' + Math.round(avgLastWeek) + '</div>' +
+    '</div>' +
+
+    '<div class="hero-kpi completion">' +
+      '<div class="hero-kpi-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>' +
+      '<div class="hero-kpi-label">Overall Completion</div>' +
+      '<div class="hero-kpi-value">' + completion + '%' +
+        '<span class="hero-kpi-trend ' + (completion >= 50 ? 'down' : 'up') + '">' + (completion >= 50 ? '↓' : '↑') + '</span>' +
+      '</div>' +
+      '<div class="hero-kpi-sub"><strong>' + DATA.siteProgress.filter(function(r){return (r['Progress']||0)>=80;}).length + '</strong> of <strong>' + DATA.siteProgress.length + '</strong> items ≥80%</div>' +
+    '</div>' +
+
+    '<div class="hero-kpi delays">' +
+      (overdueDev.length > 0 ? '<div class="hero-kpi-badge overdue">⚠ OVERDUE</div>' : '') +
+      '<div class="hero-kpi-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>' +
+      '<div class="hero-kpi-label">Open Deviations</div>' +
+      '<div class="hero-kpi-value">' + openDev.length +
+        (overdueDev.length > 0 ? ' <span style="font-size:16px;color:var(--red-mid)">+' + overdueDev.length + '</span>' : '') +
+      '</div>' +
+      '<div class="hero-kpi-sub"><strong>' + DATA.deviations.filter(function(d){return String(d['Deviation Status']||'').startsWith('05');}).length + '</strong> closed · <strong>' + DATA.deviations.length + '</strong> total</div>' +
+    '</div>' +
+
+    '<div class="hero-kpi safety' + (openInc.length > 3 ? '' : '') + '">' +
+      '<div class="hero-kpi-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>' +
+      '<div class="hero-kpi-label">Safety Incidents</div>' +
+      '<div class="hero-kpi-value">' + openInc.length +
+        (openInc.filter(function(d){return d['stop_work'];}).length > 0 ? ' <span style="font-size:14px">🛑</span>' : '') +
+      '</div>' +
+      '<div class="hero-kpi-sub"><strong>' + DATA.incidents.length + '</strong> total observations</div>' +
+    '</div>';
+
+  document.getElementById('heroKPIs').innerHTML = kpiHtml;
+
+  renderOverviewCharts(shifts, dates);
 }
 
-function renderOverview() {
-  // Headcount chart
-  var shifts = computeHCByDate(DATA.workDays);
-  var last14 = Object.keys(shifts).sort().slice(-14);
-  if (CHARTS.hc) CHARTS.hc.destroy();
-  var ctxHC = document.getElementById('chartHC');
+function renderOverviewCharts(shifts, dates) {
+  var last14 = dates.slice(-14);
+
+  if (CHARTS.hcTrend) CHARTS.hcTrend.destroy();
+  var ctxHC = document.getElementById('chartHCTrend');
   if (ctxHC) {
-    CHARTS.hc = new Chart(ctxHC, {
-      type: 'bar',
+    CHARTS.hcTrend = new Chart(ctxHC, {
+      type: 'line',
       data: {
         labels: last14.map(function(d) { return d.slice(5); }),
-        datasets: [{ label: 'Headcount', data: last14.map(function(d) { return shifts[d] ? shifts[d].total : 0; }), backgroundColor: '#2563EB' }]
+        datasets: [{
+          data: last14.map(function(d) { return shifts[d] ? shifts[d].total : 0; }),
+          borderColor: '#3B82F6',
+          backgroundColor: 'rgba(59,130,246,0.1)',
+          fill: true, tension: 0.4, pointRadius: 3, pointBackgroundColor: '#3B82F6'
+        }]
       },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } }, x: { grid: { display: false } } } }
     });
   }
 
-  // Progress section donut
-  if (CHARTS.progress) CHARTS.progress.destroy();
-  var sections = {};
-  DATA.siteProgress.forEach(function(r) {
-    var sec = r['Section'] || 'Other';
-    if (!sections[sec]) sections[sec] = 0;
-    sections[sec]++;
-  });
-  var ctxProg = document.getElementById('chartProgress');
-  if (ctxProg) {
-    var secLabels = Object.keys(sections);
-    CHARTS.progress = new Chart(ctxProg, {
-      type: 'doughnut',
-      data: { labels: secLabels, datasets: [{ data: secLabels.map(function(s) { return sections[s]; }), backgroundColor: ['#2563EB','#16A34A','#CA8A04','#DC2626','#7C3AED','#64748b','#0EA5E9','#F59E0B'] }] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } } }
+  if (CHARTS.completionTrend) CHARTS.completionTrend.destroy();
+  var ctxComp = document.getElementById('chartCompletionTrend');
+  if (ctxComp) {
+    var compData = last14.map(function(d) {
+      var entry = DATA.dailyLog.find(function(e) { return e['Date'] === d; });
+      return entry ? parseFloat(entry['Completed Tasks %'] || 0) : null;
+    });
+    CHARTS.completionTrend = new Chart(ctxComp, {
+      type: 'line',
+      data: {
+        labels: last14.map(function(d) { return d.slice(5); }),
+        datasets: [{
+          data: compData,
+          borderColor: '#10B981',
+          backgroundColor: 'rgba(16,185,129,0.1)',
+          fill: true, tension: 0.4, pointRadius: 3, pointBackgroundColor: '#10B981'
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100, grid: { color: 'rgba(0,0,0,0.05)' } }, x: { grid: { display: false } } } }
     });
   }
 
-  // Recent journal
-  var recent = DATA.dailyLog.slice(0, 3);
-  var html = '<div class="month-label" style="margin-top:8px">Recent Journal Entries</div>';
-  recent.forEach(function(r) {
-    var d = parseDateDMY(r['Date']);
-    var acts = (r['Activities'] || '').split(';').filter(function(s){return s.trim();});
-    var delays = (r['Delays'] || '').trim();
-    var hse = (r['HSE Activities'] || '').trim();
-    html += '<div class="day-entry">' +
-      '<div class="day-header">' +
-        '<div class="day-date-block"><div class="day-date-num">' + (d ? d.getDate() : '?') + '</div><div class="day-date-weekday">' + (d ? d.toLocaleDateString('en-GB', { weekday: 'short' }) : '') + '</div></div>' +
-        '<div class="props">' +
-          (acts.length ? '<div class="prop green"><span class="prop-label">Acts</span><span class="prop-value">' + acts.length + '</span></div>' : '') +
-          (delays ? '<div class="prop red"><span class="prop-label">Delay</span><span class="prop-value">!</span></div>' : '') +
-          (hse ? '<div class="prop"><span class="prop-label">HSE</span><span class="prop-value">✓</span></div>' : '') +
-        '</div>' +
-      '</div>' +
-      (acts.length ? '<div class="section"><div class="section-label"><div class="dot" style="background:#38bdf8"></div>Activities</div><div class="section-content">' + acts.slice(0,3).map(function(a){return '<span class="activity-item">'+esc(a.trim())+'</span>';}).join('') + (acts.length > 3 ? '<span class="activity-item">+' + (acts.length-3) + '</span>' : '') + '</div></div>' : '') +
-      (delays ? '<div class="section"><div class="section-label"><div class="dot" style="background:#f87171"></div>Delays</div><div class="section-content" style="color:var(--red)">' + esc(delays) + '</div></div>' : '') +
-    '</div>';
-  });
-  document.getElementById('overviewRecent').innerHTML = html;
+  if (CHARTS.progressSection) CHARTS.progressSection.destroy();
+  var ctxPS = document.getElementById('chartProgressSection');
+  if (ctxPS) {
+    var sections = {};
+    DATA.siteProgress.forEach(function(r) {
+      var sec = r['Section'] || 'Other';
+      if (!sections[sec]) sections[sec] = [];
+      sections[sec].push(r);
+    });
+    var secLabels = Object.keys(sections).slice(0,8);
+    var secAvgs = secLabels.map(function(s) {
+      var vals = sections[s].map(function(r){ return parseFloat(r['Progress']||0); });
+      return vals.length ? Math.round(vals.reduce(function(a,b){return a+b;},0)/vals.length) : 0;
+    });
+    CHARTS.progressSection = new Chart(ctxPS, {
+      type: 'bar',
+      data: { labels: secLabels, datasets: [{ data: secAvgs, backgroundColor: secLabels.map(function(){return '#3B82F6';}) }] },
+      options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, max: 100, grid: { color: 'rgba(0,0,0,0.05)' } }, y: { grid: { display: false } } } }
+    });
+  }
+
+  if (CHARTS.safetyTrend) CHARTS.safetyTrend.destroy();
+  var ctxST = document.getElementById('chartSafetyTrend');
+  if (ctxST) {
+    var months = {};
+    DATA.incidents.forEach(function(r) {
+      var d = r['obs_date'];
+      if (!d) return;
+      var m = d.slice(0,7);
+      if (!months[m]) months[m] = 0;
+      months[m]++;
+    });
+    var moLabels = Object.keys(months).sort().slice(-6);
+    CHARTS.safetyTrend = new Chart(ctxST, {
+      type: 'bar',
+      data: { labels: moLabels.map(function(m){return m.slice(5);}), datasets: [{ data: moLabels.map(function(m){return months[m];}), backgroundColor: '#6366F1' }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } }, x: { grid: { display: false } } } }
+    });
+  }
 }
 
-// ── Journal ─────────────────────────────────────────────────────
-function renderJournal(monthKey) {
+
+(monthKey) {
   if (monthKey === undefined) monthKey = 'all';
   document.getElementById('journalSubtitle').textContent = DATA.dailyLog.length + ' entries';
   var months = {};
@@ -820,22 +926,22 @@ function renderDevTable() {
     if (priority === 'High') priorityClass = 'priority-high';
     else if (priority === 'Low') priorityClass = 'priority-low';
 
-    var detailHtml = '<div class="dev-detail-row"><div class="dev-detail-label">Problem</div><div class="dev-detail-value">' + escHtml(desc) + '</div></div>';
-    if (solution) detailHtml += '<div class="dev-detail-row"><div class="dev-detail-label">Solution</div><div class="dev-detail-value">' + escHtml(solution) + '</div></div>';
-    if (causing) detailHtml += '<div class="dev-detail-row"><div class="dev-detail-label">Causing</div><div class="dev-detail-value">' + escHtml(causing) + '</div></div>';
-    if (resolving) detailHtml += '<div class="dev-detail-row"><div class="dev-detail-label">Resolving</div><div class="dev-detail-value">' + escHtml(resolving) + '</div></div>';
-    if (jira) detailHtml += '<div class="dev-detail-row"><div class="dev-detail-label">Jira</div><div class="dev-detail-value"><a href="#" onclick="return false;">' + escHtml(jira) + '</a></div></div>';
-    if (author || created) detailHtml += '<div class="dev-detail-row"><div class="dev-detail-label">Author / Created</div><div class="dev-detail-value">' + escHtml(author) + ' / ' + escHtml(String(created).slice(0,10)) + '</div></div>';
+    var detailHtml = '<div class="dev-detail-row"><div class="dev-detail-label">Problem</div><div class="dev-detail-value">' + esc(desc) + '</div></div>';
+    if (solution) detailHtml += '<div class="dev-detail-row"><div class="dev-detail-label">Solution</div><div class="dev-detail-value">' + esc(solution) + '</div></div>';
+    if (causing) detailHtml += '<div class="dev-detail-row"><div class="dev-detail-label">Causing</div><div class="dev-detail-value">' + esc(causing) + '</div></div>';
+    if (resolving) detailHtml += '<div class="dev-detail-row"><div class="dev-detail-label">Resolving</div><div class="dev-detail-value">' + esc(resolving) + '</div></div>';
+    if (jira) detailHtml += '<div class="dev-detail-row"><div class="dev-detail-label">Jira</div><div class="dev-detail-value"><a href="#" onclick="return false;">' + esc(jira) + '</a></div></div>';
+    if (author || created) detailHtml += '<div class="dev-detail-row"><div class="dev-detail-label">Author / Created</div><div class="dev-detail-value">' + esc(author) + ' / ' + esc(String(created).slice(0,10)) + '</div></div>';
 
     html += '<div class="dev-row" data-row="' + i + '">' +
       '<div class="dev-row-main" onclick="toggleDevRow(' + i + ')">' +
       '<div class="dev-no">' + no + '</div>' +
-      '<div class="dev-title">' + escHtml(title) + '</div>' +
+      '<div class="dev-title">' + esc(title) + '</div>' +
       '<div><span class="status-badge ' + statusClass + '">' + statusLabel + '</span></div>' +
       '<div class="' + priorityClass + '">' + priority + '</div>' +
       '<div><span class="' + dueClass + '">' + dueLabel + '</span></div>' +
-      '<div class="col-area dev-area">' + escHtml(area) + '</div>' +
-      '<div class="col-company dev-area">' + escHtml(assigned) + '</div>' +
+      '<div class="col-area dev-area">' + esc(area) + '</div>' +
+      '<div class="col-company dev-area">' + esc(assigned) + '</div>' +
       '</div>' +
       '<div class="dev-detail" id="devdetail-' + i + '">' + detailHtml + '</div>' +
       '</div>';
