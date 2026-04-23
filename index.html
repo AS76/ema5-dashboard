@@ -418,6 +418,21 @@ async function tursoQuery(sql) {
 }
 
 async function loadAll() {
+  // Test fetch basic
+  console.log('loadAll start — TURSO_DB:', TURSO_DB);
+  console.log('TURSO_TOKEN prefix:', TURSO_TOKEN.slice(0,20));
+  try {
+    var test = await fetch(TURSO_DB + '/v1/execute', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + TURSO_TOKEN, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stmt: { sql: 'SELECT 1 as test', args: [] } })
+    });
+    console.log('Test fetch status:', test.status, test.ok);
+    var testJson = await test.json();
+    console.log('Test fetch result:', JSON.stringify(testJson).slice(0,100));
+  } catch(e) {
+    console.error('Test fetch failed:', e.message);
+  }
   try {
     var dl   = await tursoQuery('SELECT * FROM daily_log ORDER BY "Date" DESC');
     var wd   = await tursoQuery('SELECT * FROM work_days ORDER BY "Date" DESC');
