@@ -377,7 +377,7 @@
 <script>
 // ── Turso config ──────────────────────────────────────────────────
 var TURSO_DB = 'https://ema5-cleo.aws-eu-west-1.turso.io';
-var TURSO_TOKEN = 'eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzY4NzQ5MDQsImlkIjoiMDE5ZGI1ZmYtMTgwMS03NjQ0LTg1MWYtNzYwYjIxYmEwY2M3IiwicmlkIjoiMzViNWFiZDctMDVhMy00MGQyLTkyMDgtMzQyODYxZGVkMTRhIn0.elg3ZXmgS4oEVhzIpS-W2PDqi18CEavcuxG335Lu2fxAdbvUPD178ArjrLW-kZo2HrOgawDUjlojA1XGyUCKCQ';
+var TURSO_TOKEN = 'eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzY5NDc1MTQsImlkIjoiMDE5ZGI1ZmYtMTgwMS03NjQ0LTg1MWYtNzYwYjIxYmEwY2M3IiwicmlkIjoiMzViNWFiZDctMDVhMy00MGQyLTkyMDgtMzQyODYxZGVkMTRhIn0.akQymBFVhNLIujgya-Y4vYXozZTOlF31qH6Hs9-36Tq7Qksuqgg1aP-06MUVtGr74VtNrBVw8qaO-gRYosSxDQ';
 
 var DATA = { dailyLog: [], workDays: [], siteProgress: [], resourcePlan: [], incidents: [], transcripts: [], deviations: [], loaded: false };
 var CHARTS = {};
@@ -849,6 +849,7 @@ function renderSafety() {
     document.getElementById('safetyStats').innerHTML = '<div class="error-msg">No incident data loaded.</div>';
     return;
   }
+}
 
 function renderDeviations() {
   if (!DATA.deviations.length) {
@@ -990,96 +991,6 @@ function toggleDevRow(i) {
   }
 }
 
-
-  var total = inc.length;
-  var positive = inc.filter(function(r) { return r.positive_observation; }).length;
-  var stopWork = inc.filter(function(r) { return r.stop_work; }).length;
-  var resolved = inc.filter(function(r) { return r.resolved; }).length;
-  var withInjury = inc.filter(function(r) { return r.potential_injury; }).length;
-  var positiveRate = total > 0 ? Math.round((positive / total) * 100) : 0;
-  var resolvedRate = total > 0 ? Math.round((resolved / total) * 100) : 0;
-
-  document.getElementById('safetyStats').innerHTML =
-    '<div class="safety-card"><div class="safety-card-label">Total Observations</div><div class="safety-card-value">' + total + '</div><div class="safety-card-sub">YTD</div></div>' +
-    '<div class="safety-card"><div class="safety-card-label">Positive Rate</div><div class="safety-card-value" style="color:var(--green)">' + positiveRate + '%</div><div class="safety-card-sub">' + positive + ' positive</div></div>' +
-    '<div class="safety-card"><div class="safety-card-label">Resolution Rate</div><div class="safety-card-value" style="color:var(--accent)">' + resolvedRate + '%</div><div class="safety-card-sub">' + resolved + ' resolved</div></div>' +
-    '<div class="safety-card stop-work-card"><div class="safety-card-label">STOP WORK</div><div class="safety-card-value">' + stopWork + '</div><div class="safety-card-sub">Total stop-work events</div></div>' +
-    '<div class="safety-card"><div class="safety-card-label">Injury Potential</div><div class="safety-card-value" style="color:var(--yellow)">' + withInjury + '</div><div class="safety-card-sub">Could cause injury</div></div>';
-
-  // Weekly positive rate trend
-  var weekMap = {};
-  inc.forEach(function(r) {
-    if (!r.obs_date) return;
-    var d = new Date(r.obs_date + 'T00:00:00');
-    var wk = getWeekKey(d);
-    if (!weekMap[wk]) weekMap[wk] = { pos: 0, neg: 0 };
-    if (r.positive_observation) weekMap[wk].pos++;
-    else weekMap[wk].neg++;
-  });
-  var weeks = Object.keys(weekMap).sort().slice(-10);
-  if (CHARTS.safetyTrend) CHARTS.safetyTrend.destroy();
-  var ctxST = document.getElementById('chartSafetyTrend');
-  if (ctxST) {
-    CHARTS.safetyTrend = new Chart(ctxST, {
-      type: 'line',
-      data: {
-        labels: weeks.map(function(w) { return w; }),
-        datasets: [
-          { label: 'Positive', data: weeks.map(function(w) { return weekMap[w] ? weekMap[w].pos : 0; }), borderColor: '#16A34A', backgroundColor: 'rgba(22,163,74,0.1)', fill: true, tension: 0.3 },
-          { label: 'Negative', data: weeks.map(function(w) { return weekMap[w] ? weekMap[w].neg : 0; }), borderColor: '#DC2626', backgroundColor: 'rgba(220,38,38,0.1)', fill: true, tension: 0.3 }
-        ]
-      },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'bottom', labels: { font: { size: 10 } } } }, scales: { y: { beginAtZero: true } } }
-    });
-  }
-
-  // By category
-  var cats = {};
-  inc.forEach(function(r) {
-    var c = r.category || 'Other';
-    if (!cats[c]) cats[c] = 0;
-    cats[c]++;
-  });
-  var catColors = { 'Site Rules/Setup': '#2563EB', 'Physical': '#CA8A04', 'Environmental': '#16A34A', 'Hazardous Energy': '#DC2626', 'Welfare': '#7C3AED' };
-  if (CHARTS.safetyCats) CHARTS.safetyCats.destroy();
-  var ctxSC = document.getElementById('chartSafetyCats');
-  if (ctxSC) {
-    var catLabels = Object.keys(cats);
-    CHARTS.safetyCats = new Chart(ctxSC, {
-      type: 'doughnut',
-      data: {
-        labels: catLabels,
-        datasets: [{ data: catLabels.map(function(c) { return cats[c]; }), backgroundColor: catLabels.map(function(c) { return catColors[c] || '#64748b'; }) }]
-      },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } } }
-    });
-  }
-
-  // Category grid
-  var maxCat = Math.max.apply(null, Object.values(cats));
-  var catHtml = '';
-  Object.entries(cats).sort(function(a, b) { return b[1] - a[1]; }).forEach(function(entry) {
-    var c = entry[0], n = entry[1];
-    var pct = Math.round((n / maxCat) * 100);
-    var color = catColors[c] || '#64748b';
-    catHtml += '<div class="category-card">' +
-      '<div class="category-name">' + esc(c) + '</div>' +
-      '<div class="category-bar-wrap"><div class="category-bar" style="width:' + pct + '%;background:' + color + '"></div></div>' +
-      '<div class="category-meta"><span>' + n + ' observations</span><span>' + Math.round((n/total)*100) + '%</span></div>' +
-    '</div>';
-  });
-  document.getElementById('categoryGrid').innerHTML = catHtml;
-
-  // Filter pills
-  var catFilterList = ['all'].concat(Object.keys(cats).sort());
-  var sfHtml = '<span class="filter-label">Category:</span>';
-  catFilterList.forEach(function(c) {
-    sfHtml += '<div class="pill ' + (FILTERS.safety === c ? 'active' : '') + '" onclick="setSafetyFilter(\'' + esc(c.replace(/'/g,"\\'")) + '\', this)">' + (c === 'all' ? 'All' : esc(c)) + '</div>';
-  });
-  document.getElementById('safetyFilter').innerHTML = sfHtml;
-
-  renderIncidentsTable(FILTERS.safety);
-}
 
 function setSafetyFilter(cat, el) {
   document.querySelectorAll('#safetyFilter .pill').forEach(function(p) { p.classList.remove('active'); });
