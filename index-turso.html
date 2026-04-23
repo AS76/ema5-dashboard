@@ -117,6 +117,50 @@
     .view-title { font-size: 16px; font-weight: 700; }
     .view-subtitle { font-size: 12px; color: var(--muted); }
 
+    /* Deviations view */
+    .dev-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+    .dev-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; text-align: center; }
+    .dev-card-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin-bottom: 6px; }
+    .dev-card-value { font-size: 28px; font-weight: 700; }
+    .dev-card-sub { font-size: 10px; color: var(--muted); margin-top: 2px; }
+    .dev-card.overdue .dev-card-value { color: var(--red); }
+    .dev-card.open .dev-card-value { color: var(--accent); }
+    .dev-filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; align-items: center; }
+    .dev-filters .filter-label { font-size: 12px; font-weight: 500; color: var(--muted); margin-right: 4px; }
+    .dev-filter-btn { padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg2); font-size: 11px; cursor: pointer; color: var(--text); }
+    .dev-filter-btn:hover { border-color: var(--accent); }
+    .dev-filter-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+    .dev-table-wrap { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .dev-table-header { display: grid; grid-template-columns: 70px 1fr 90px 80px 90px 100px; gap: 8px; padding: 10px 16px; background: var(--bg3); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); border-bottom: 1px solid var(--border); position: sticky; top: 0; }
+    .dev-row { border-bottom: 1px solid var(--border); cursor: pointer; }
+    .dev-row:last-child { border-bottom: none; }
+    .dev-row:hover { background: var(--bg3); }
+    .dev-row-main { display: grid; grid-template-columns: 70px 1fr 90px 80px 90px 100px; gap: 8px; padding: 10px 16px; align-items: center; font-size: 13px; }
+    .dev-row-main:hover { background: var(--hover); }
+    .dev-no { font-weight: 600; font-size: 12px; color: var(--muted); }
+    .dev-title { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .dev-area { font-size: 11px; color: var(--muted); }
+    .dev-detail { padding: 12px 16px 12px 36px; background: var(--bg3); font-size: 12px; line-height: 1.6; display: none; border-top: 1px solid var(--border); }
+    .dev-detail.open { display: block; }
+    .dev-detail-row { display: grid; grid-template-columns: 140px 1fr; gap: 8px; margin-bottom: 6px; }
+    .dev-detail-label { font-weight: 600; color: var(--muted); font-size: 11px; text-transform: uppercase; }
+    .dev-detail-value { color: var(--text); }
+    .status-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; }
+    .status-open { background: #fef3c7; color: #92400e; }
+    .status-closed { background: #d1fae5; color: #065f46; }
+    .status-progress { background: #dbeafe; color: #1e40af; }
+    .priority-high { color: var(--red); font-weight: 600; }
+    .priority-medium { color: #d97706; }
+    .priority-low { color: var(--muted); }
+    .overdue-label { background: #fee2e2; color: #991b1b; font-size: 10px; padding: 1px 6px; border-radius: 4px; margin-left: 6px; font-weight: 600; }
+    @media (max-width: 768px) {
+      .dev-stats { grid-template-columns: repeat(2, 1fr); }
+      .dev-table-header { grid-template-columns: 60px 1fr 80px; }
+      .dev-table-header .col-area, .dev-table-header .col-company { display: none; }
+      .dev-row-main { grid-template-columns: 60px 1fr 80px; }
+      .dev-row-main .col-area, .dev-row-main .col-company { display: none; }
+    }
+
     /* Safety view */
     .safety-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 24px; }
     .safety-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; text-align: center; }
@@ -193,6 +237,7 @@
         <div class="tab" id="tab-resources" onclick="showView('resources')">Resources</div>
         <div class="tab" id="tab-safety" onclick="showView('safety')">Safety</div>
         <div class="tab" id="tab-gantt" onclick="showView('gantt')">Gantt</div>
+        <div class="tab" id="tab-deviations" onclick="showView('deviations')">Deviations</div>
       </div>
     </div>
   </div>
@@ -305,6 +350,18 @@
       <div class="company-filter" id="ganttFilter"></div>
       <div class="gantt-container" id="ganttContainer"></div>
     </div>
+
+    <div class="view" id="view-deviations">
+      <div class="view-header">
+        <div>
+          <div class="view-title">Deviations</div>
+          <div class="view-subtitle" id="deviationsSubtitle">Lifecycle tracker — EMA5</div>
+        </div>
+      </div>
+      <div class="dev-stats" id="devStats"></div>
+      <div class="dev-filters" id="devFilters"></div>
+      <div class="dev-table" id="devTable"></div>
+    </div>
   </div>
 
 <script>
@@ -312,7 +369,7 @@
 var TURSO_DB = 'https://ema5-cleo.aws-eu-west-1.turso.io';
 var TURSO_TOKEN = 'eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzY4NzQ5MDQsImlkIjoiMDE5ZGI1ZmYtMTgwMS03NjQ0LTg1MWYtNzYwYjIxYmEwY2M3IiwicmlkIjoiMzViNWFiZDctMDVhMy00MGQyLTkyMDgtMzQyODYxZGVkMTRhIn0.elg3ZXmgS4oEVhzIpS-W2PDqi18CEavcuxG335Lu2fxAdbvUPD178ArjrLW-kZo2HrOgawDUjlojA1XGyUCKCQ';
 
-var DATA = { dailyLog: [], workDays: [], siteProgress: [], resourcePlan: [], incidents: [], transcripts: [], loaded: false };
+var DATA = { dailyLog: [], workDays: [], siteProgress: [], resourcePlan: [], incidents: [], transcripts: [], deviations: [], loaded: false };
 var CHARTS = {};
 var FILTERS = { company: 'all', safety: 'all' };
 
@@ -353,6 +410,8 @@ async function loadAll() {
     DATA.siteProgress = tursoRows(sp);
     DATA.resourcePlan = tursoRows(rp);
     DATA.incidents   = tursoRows(inc);
+    var dev = await tursoQuery('SELECT * FROM deviations');
+    DATA.deviations = tursoRows(dev);
     DATA.loaded = true;
     document.getElementById('syncTime').textContent = 'Synced ' + new Date().toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'});
     renderAll();
@@ -376,6 +435,7 @@ function renderAll() {
   renderResources();
   renderSafety();
   renderGantt();
+  renderDeviations();
 }
 
 // ── Stats / Overview ──────────────────────────────────────────────
@@ -654,6 +714,147 @@ function renderSafety() {
     document.getElementById('safetyStats').innerHTML = '<div class="error-msg">No incident data loaded.</div>';
     return;
   }
+
+function renderDeviations() {
+  if (!DATA.deviations.length) {
+    document.getElementById('devTable').innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted)">No deviations data</div>';
+    return;
+  }
+  // Stats
+  var open = DATA.deviations.filter(function(d) { return String(d['Deviation Status'] || '').startsWith('01'); });
+  var closed = DATA.deviations.filter(function(d) { return String(d['Deviation Status'] || '').startsWith('05'); });
+  var today = new Date().toISOString().slice(0,10);
+  var overdue = DATA.deviations.filter(function(d) {
+    var due = d['Due Date'];
+    if (!due) return false;
+    var dueStr = typeof due === 'string' ? due.slice(0,10) : null;
+    return dueStr && dueStr < today && !String(d['Deviation Status'] || '').startsWith('05');
+  });
+  var high = DATA.deviations.filter(function(d) { return String(d['Priority'] || '') === 'High'; });
+  document.getElementById('devStats').innerHTML =
+    '<div class="dev-card open"><div class="dev-card-label">Open</div><div class="dev-card-value">' + open.length + '</div></div>' +
+    '<div class="dev-card"><div class="dev-card-label">Closed</div><div class="dev-card-value">' + closed.length + '</div></div>' +
+    '<div class="dev-card overdue"><div class="dev-card-label">Overdue</div><div class="dev-card-value">' + overdue.length + '</div></div>' +
+    '<div class="dev-card"><div class="dev-card-label">High Priority</div><div class="dev-card-value">' + high.length + '</div></div>';
+
+  // Filters
+  var areas = [...new Set(DATA.deviations.map(function(d) { return d['PLC Area'] || ''; }).filter(Boolean))].sort();
+  var statusFilters = ['All','01 Open','02 In Progress','03 On Hold','04 Resolved','05 Closed'];
+  var filterHtml = '<span class="filter-label">Status:</span>';
+  statusFilters.forEach(function(s) {
+    var label = s === 'All' ? 'All' : s;
+    filterHtml += '<button class="dev-filter-btn' + (s === 'All' ? ' active' : '') + '" data-filter="status" data-val="' + s + '">' + label + '</button>';
+  });
+  filterHtml += '<span class="filter-label" style="margin-left:12px">Area:</span><button class="dev-filter-btn active" data-filter="area" data-val="All">All</button>';
+  areas.forEach(function(a) {
+    filterHtml += '<button class="dev-filter-btn" data-filter="area" data-val="' + a + '">' + a + '</button>';
+  });
+  document.getElementById('devFilters').innerHTML = filterHtml;
+
+  // Attach filter listeners
+  document.querySelectorAll('.dev-filter-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var group = this.dataset.filter;
+      document.querySelectorAll('.dev-filter-btn[data-filter="' + group + '"]').forEach(function(b) { b.classList.remove('active'); });
+      this.classList.add('active');
+      renderDevTable();
+    });
+  });
+
+  renderDevTable();
+}
+
+function renderDevTable() {
+  var activeStatus = document.querySelector('.dev-filter-btn[data-filter="status"].active')?.dataset.val || 'All';
+  var activeArea = document.querySelector('.dev-filter-btn[data-filter="area"].active')?.dataset.val || 'All';
+  var today = new Date().toISOString().slice(0,10);
+
+  var filtered = DATA.deviations.filter(function(d) {
+    var status = String(d['Deviation Status'] || '');
+    var area = d['PLC Area'] || '';
+    if (activeStatus !== 'All' && !status.startsWith(activeStatus)) return false;
+    if (activeArea !== 'All' && area !== activeArea) return false;
+    return true;
+  });
+
+  if (!filtered.length) {
+    document.getElementById('devTable').innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted)">No deviations match filters</div>';
+    return;
+  }
+
+  var html = '<div class="dev-table-wrap"><div class="dev-table-header">' +
+    '<div>No</div><div>Title</div><div>Status</div><div>Priority</div><div>Due</div><div class="col-area">Area</div><div class="col-company">Assigned</div>' +
+    '</div>';
+  filtered.forEach(function(d, i) {
+    var no = d['Deviation No'] || '';
+    var title = d['Title'] || d['Problem Description'] || '';
+    var status = String(d['Deviation Status'] || '');
+    var priority = d['Priority'] || '';
+    var due = d['Due Date'] || '';
+    var area = d['PLC Area'] || '';
+    var assigned = d['Assigned To'] || '';
+    var desc = d['Problem Description'] || '';
+    var solution = d['Solution Description'] || '';
+    var causing = d['Causing Company'] || '';
+    var resolving = d['Resolving Company'] || '';
+    var jira = d['Jira Issue Key'] || '';
+    var created = d['Creation Date'] || '';
+    var author = d['Author'] || '';
+
+    var statusLabel = status;
+    var statusClass = 'status-closed';
+    if (status.startsWith('01')) { statusClass = 'status-open'; statusLabel = 'Open'; }
+    else if (status.startsWith('02')) { statusClass = 'status-progress'; statusLabel = 'In Progress'; }
+    else if (status.startsWith('03')) { statusClass = 'status-progress'; statusLabel = 'On Hold'; }
+    else if (status.startsWith('04')) { statusClass = 'status-progress'; statusLabel = 'Resolved'; }
+    else if (status.startsWith('05')) { statusClass = 'status-closed'; statusLabel = 'Closed'; }
+
+    var dueClass = '';
+    var dueLabel = due ? due.slice(0,10) : '-';
+    if (due && due.slice(0,10) < today && !status.startsWith('05')) {
+      dueClass = 'overdue-label';
+      dueLabel += ' OVERDUE';
+    }
+
+    var priorityClass = 'priority-medium';
+    if (priority === 'High') priorityClass = 'priority-high';
+    else if (priority === 'Low') priorityClass = 'priority-low';
+
+    var detailHtml = '<div class="dev-detail-row"><div class="dev-detail-label">Problem</div><div class="dev-detail-value">' + escHtml(desc) + '</div></div>';
+    if (solution) detailHtml += '<div class="dev-detail-row"><div class="dev-detail-label">Solution</div><div class="dev-detail-value">' + escHtml(solution) + '</div></div>';
+    if (causing) detailHtml += '<div class="dev-detail-row"><div class="dev-detail-label">Causing</div><div class="dev-detail-value">' + escHtml(causing) + '</div></div>';
+    if (resolving) detailHtml += '<div class="dev-detail-row"><div class="dev-detail-label">Resolving</div><div class="dev-detail-value">' + escHtml(resolving) + '</div></div>';
+    if (jira) detailHtml += '<div class="dev-detail-row"><div class="dev-detail-label">Jira</div><div class="dev-detail-value"><a href="#" onclick="return false;">' + escHtml(jira) + '</a></div></div>';
+    if (author || created) detailHtml += '<div class="dev-detail-row"><div class="dev-detail-label">Author / Created</div><div class="dev-detail-value">' + escHtml(author) + ' / ' + escHtml(String(created).slice(0,10)) + '</div></div>';
+
+    html += '<div class="dev-row" data-row="' + i + '">' +
+      '<div class="dev-row-main" onclick="toggleDevRow(' + i + ')">' +
+      '<div class="dev-no">' + no + '</div>' +
+      '<div class="dev-title">' + escHtml(title) + '</div>' +
+      '<div><span class="status-badge ' + statusClass + '">' + statusLabel + '</span></div>' +
+      '<div class="' + priorityClass + '">' + priority + '</div>' +
+      '<div><span class="' + dueClass + '">' + dueLabel + '</span></div>' +
+      '<div class="col-area dev-area">' + escHtml(area) + '</div>' +
+      '<div class="col-company dev-area">' + escHtml(assigned) + '</div>' +
+      '</div>' +
+      '<div class="dev-detail" id="devdetail-' + i + '">' + detailHtml + '</div>' +
+      '</div>';
+  });
+
+  html += '</div>';
+  document.getElementById('devTable').innerHTML = html;
+}
+
+function toggleDevRow(i) {
+  var detail = document.getElementById('devdetail-' + i);
+  if (detail.classList.contains('open')) {
+    detail.classList.remove('open');
+  } else {
+    document.querySelectorAll('.dev-detail.open').forEach(function(d) { d.classList.remove('open'); });
+    detail.classList.add('open');
+  }
+}
+
 
   var total = inc.length;
   var positive = inc.filter(function(r) { return r.positive_observation; }).length;
