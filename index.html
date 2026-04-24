@@ -6,7 +6,7 @@
   <title>EMA5 Operations — Turso</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="assets/chart.min.js"></script>
   <style>
     :root { --bg: #FAF7F2; --bg2: #FFFFFF; --bg3: #F0EDE8; --border: #E5DFD6; --text: #2D2418; --muted: #8C7B6E; --accent: #2563EB; --green: #16A34A; --yellow: #CA8A04; --red: #DC2626; --purple: #7C3AED; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -444,7 +444,6 @@ async function loadAll() {
     document.querySelector('.content').prepend(errDiv);
   }
   }
-}
 
 function esc(s) {
   if (s == null) return '';
