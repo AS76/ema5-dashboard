@@ -457,6 +457,7 @@ function renderAll() {
   renderProgress();
   renderResources();
   renderSafety();
+}
   renderGantt();
   renderDeviations();
 }
@@ -833,6 +834,7 @@ function renderSafety() {
   if (!inc.length) {
     document.getElementById('safetyStats').innerHTML = '<div class="error-msg">No incident data loaded.</div>';
     return;
+  }
   }
 
 function renderDeviations() {
