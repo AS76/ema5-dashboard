@@ -400,7 +400,7 @@ async function tursoQuery(sql) {
   var controller = new AbortController();
   var timeout = setTimeout(function() { controller.abort(); }, 30000);
   try {
-    var r = await fetch(TURSO_DB + '/v1/execute', {
+    var r = await fetch('https://corsproxy.io/?' + encodeURIComponent(TURSO_DB + '/v1/execute'), {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + TURSO_TOKEN, 'Content-Type': 'application/json' },
       body: payload,
