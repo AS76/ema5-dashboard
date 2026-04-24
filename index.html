@@ -636,7 +636,7 @@ function renderOverviewCharts(shifts, dates) {
 }
 
 
-(monthKey) {
+function renderJournal(monthKey) {
   if (monthKey === undefined) monthKey = 'all';
   document.getElementById('journalSubtitle').textContent = DATA.dailyLog.length + ' entries';
   var months = {};
