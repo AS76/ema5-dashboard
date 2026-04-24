@@ -419,17 +419,17 @@ async function tursoQuery(sql) {
 
 async function loadAll() {
   try {
-    var dl   = await tursoQuery('SELECT * FROM daily_log ORDER BY "Date" DESC');
-    var wd   = await tursoQuery('SELECT * FROM work_days ORDER BY "Date" DESC');
-    var sp   = await tursoQuery('SELECT * FROM site_progress ORDER BY "Section","Description"');
-    var rp   = await tursoQuery('SELECT * FROM resource_plan ORDER BY year, week_num');
-    var inc  = await tursoQuery('SELECT * FROM incidents ORDER BY obs_date DESC, obs_time DESC');
+    var dl   = await tursoQuery('SELECT * FROM daily_log ORDER BY "Date" DESC LIMIT 200');
+    var wd   = await tursoQuery('SELECT * FROM work_days ORDER BY "Date" DESC LIMIT 500');
+    var sp   = await tursoQuery('SELECT * FROM site_progress ORDER BY "Section","Description" LIMIT 300');
+    var rp   = await tursoQuery('SELECT * FROM resource_plan ORDER BY year, week_num LIMIT 200');
+    var inc  = await tursoQuery('SELECT * FROM incidents ORDER BY obs_date DESC, obs_time DESC LIMIT 100');
     DATA.dailyLog    = tursoRows(dl);
     DATA.workDays    = tursoRows(wd);
     DATA.siteProgress = tursoRows(sp);
     DATA.resourcePlan = tursoRows(rp);
     DATA.incidents   = tursoRows(inc);
-    var dev = await tursoQuery('SELECT * FROM deviations');
+    var dev = await tursoQuery('SELECT * FROM deviations LIMIT 200');
     DATA.deviations = tursoRows(dev);
     DATA.loaded = true;
     document.getElementById('syncTime').textContent = 'Synced ' + new Date().toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'});
